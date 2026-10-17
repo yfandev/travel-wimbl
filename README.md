@@ -15,14 +15,15 @@ The video will walk through the agent-family concept, the current application an
 
 ## What we're building
 
-Wimbl explores a family-of-agents approach to football-trip planning:
+Wimbl explores a family-of-agents approach to sports-trip planning:
 
 - **Travel parent:** shared travel principles such as preferences, budget constraints, and verification standards.
-- **Sports parent:** sports-specific context and planning guidance.
-- **Football child:** focused research for ticketing, match-day timing, travel logistics, and source reliability.
+- **Sports parent:** sports-specific context and planning guidance shared with its specialist children.
+  - **Football child:** focused research for ticketing, match-day timing, football travel logistics, and source reliability.
+  - **Tennis child:** focused research for tournament schedules, ticketing, session timing, venue logistics, and reliable tennis information sources.
 - **Scoped memory and evaluation:** candidate lessons can be recorded and evaluated before any broader promotion; they are not automatically treated as facts.
 
-The goal is for parent agents to guide child planning while keeping claims grounded in evidence and making it possible to evaluate whether lessons improve future plans.
+The intended hierarchy is **Travel → Sports → Football and Tennis**. The sports parent guides both sibling agents, while each child applies domain-specific knowledge to its own trip-planning tasks. The goal is to keep claims grounded in evidence and make it possible to evaluate whether lessons improve future plans.
 
 ## Stack
 
