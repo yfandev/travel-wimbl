@@ -4,7 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 from wimbl.config import settings
 
-SCOPES = {"global", "sports", "tennis", "football", "user"}
+SCOPES = {"global", "sports", "football", "user"}
 
 class SharedMemory:
     """Append-only memory with provenance. Do not store secrets or private personal details."""

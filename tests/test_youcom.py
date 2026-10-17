@@ -6,7 +6,7 @@ from wimbl.config import settings
 from wimbl.integrations.cache import ResponseCache
 from wimbl.integrations.youcom import YouAPIError, YouSearch
 
-SEARCH_PAYLOAD = {"results": {"web": [{"url": "https://www.wimbledon.com/", "title": "Wimbledon", "description": "Official site",
+SEARCH_PAYLOAD = {"results": {"web": [{"url": "https://www.fcbarcelona.com/en/", "title": "FC Barcelona", "description": "Official site",
     "page_age": "2026-10-01T00:00:00Z"}], "news": []}, "metadata": {"search_uuid": "abc-123", "query": "q", "latency": 0.2}}
 
 @pytest.fixture
@@ -24,12 +24,12 @@ def test_search_contract_provenance_and_cache(tmp_path, live):
         calls.append(request)
         return httpx.Response(200, json=SEARCH_PAYLOAD)
     you = client(tmp_path, handler)
-    first = asyncio.run(you.search("wimbledon dates", count=3, boost_domains=["wimbledon.com"]))
-    second = asyncio.run(you.search("wimbledon dates", count=3, boost_domains=["wimbledon.com"]))
+    first = asyncio.run(you.search("barcelona fixtures", count=3, boost_domains=["fcbarcelona.com"]))
+    second = asyncio.run(you.search("barcelona fixtures", count=3, boost_domains=["fcbarcelona.com"]))
     assert len(calls) == 1
     assert calls[0].method == "POST" and str(calls[0].url) == settings.you_search_endpoint
     assert calls[0].headers["X-API-Key"] == "test-key"
-    assert json.loads(calls[0].content) == {"query": "wimbledon dates", "count": 3, "boost_domains": ["wimbledon.com"]}
+    assert json.loads(calls[0].content) == {"query": "barcelona fixtures", "count": 3, "boost_domains": ["fcbarcelona.com"]}
     assert first[0]["provider_request_id"] == "abc-123" and first[0]["page_age"] == "2026-10-01T00:00:00Z"
     assert not first[0]["cache_hit"] and second[0]["cache_hit"]
     assert second[0]["retrieved_at"] == first[0]["retrieved_at"]
@@ -41,7 +41,7 @@ def test_retries_server_errors_but_not_auth_errors(tmp_path, live):
         calls.append(request)
         status = next(statuses)
         return httpx.Response(status, json=SEARCH_PAYLOAD if status == 200 else {"error": "busy"})
-    assert asyncio.run(client(tmp_path / "a", flaky).search("q"))[0]["url"] == "https://www.wimbledon.com/"
+    assert asyncio.run(client(tmp_path / "a", flaky).search("q"))[0]["url"] == "https://www.fcbarcelona.com/en/"
     assert len(calls) == 2
     denied_calls = []
     def denied(request):
@@ -71,13 +71,13 @@ def test_contents_parses_pages_and_does_not_cache_failed_pages(tmp_path, live):
         calls.append(request)
         body = json.loads(request.content)
         assert str(request.url) == settings.you_contents_endpoint
-        assert body["urls"] == ["https://www.wimbledon.com/", "https://x.example/"] and body["formats"] == ["markdown"]
-        return httpx.Response(200, json=[{"url": "https://www.wimbledon.com/", "title": "W", "markdown": "# Wimbledon"},
+        assert body["urls"] == ["https://www.fcbarcelona.com/en/", "https://x.example/"] and body["formats"] == ["markdown"]
+        return httpx.Response(200, json=[{"url": "https://www.fcbarcelona.com/en/", "title": "W", "markdown": "# FC Barcelona"},
                                          {"url": "https://x.example/", "markdown": None}])
     you = client(tmp_path, handler)
-    urls = ["https://www.wimbledon.com/", "https://x.example/", "https://www.wimbledon.com/"]
+    urls = ["https://www.fcbarcelona.com/en/", "https://x.example/", "https://www.fcbarcelona.com/en/"]
     pages = asyncio.run(you.contents(urls))
-    assert [p["markdown"] for p in pages] == ["# Wimbledon", None]
+    assert [p["markdown"] for p in pages] == ["# FC Barcelona", None]
     asyncio.run(you.contents(urls))
     assert len(calls) == 2  # a failed page is not pinned in the cache for the TTL
 

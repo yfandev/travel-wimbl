@@ -78,7 +78,7 @@ class TripController:
         decision = "replan" if errors else ("escalate" if warnings else "stop")
         steps += [f"Independent verifier produced {len(findings)} finding(s).",
                   f"Controller decision: {decision}; no booking action is available."]
-        scope = group if group in {"tennis", "football"} else "sports"
+        scope = group if group == "football" else "sports"
         self.memory.add(scope=scope, lesson=f"Discovery run for '{request.interest}' returned {len(candidates)} candidate(s); findings: {[f.code for f in findings]}.",
             source=f"run:{run_id}", confidence=0.35, validated=False, tags=["run-summary", group])
         return TripResult(run_id=run_id, interest=request.interest, status=status,

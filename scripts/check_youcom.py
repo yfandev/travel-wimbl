@@ -10,12 +10,12 @@ from wimbl.integrations.youcom import YouSearch
 
 async def main() -> int:
     if not settings.you_api_key:
-        print("ERROR: YOU_API_KEY is not set. Add it to your local .env file.")
+        print("ERROR: YOU_API_KEY is not set. Add it to your local .env.local file.")
         return 2
     # Never print headers, settings, or exception request objects that could expose secrets.
     try:
         # Bypass the response cache: a smoke test must reach the live API.
-        results = await YouSearch(use_cache=False).search("official tennis tournament dates", count=3)
+        results = await YouSearch(use_cache=False).search("FC Barcelona official home fixtures tickets", count=3)
     except httpx.HTTPStatusError as exc:
         print(f"ERROR: You.com returned HTTP {exc.response.status_code}.")
         try:
