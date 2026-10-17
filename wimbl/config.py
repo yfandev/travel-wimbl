@@ -6,7 +6,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=(".env", ".env.local"), extra="ignore")
     crusoe_api_key: str = ""
     crusoe_base_url: str = "https://api.inference.crusoecloud.com/v1"
-    crusoe_model: str = "nvidia/Nemotron-3-Super-120B-A12B"
+    crusoe_model: str = SUPER  # Super-tier roles only; child routing lives in integrations/models.py
+    crusoe_timeout_s: float = 90
+    crusoe_max_concurrency: int = 4
     you_api_key: str = ""
     you_search_endpoint: str = "https://ydc-index.io/v1/search"
     you_contents_endpoint: str = "https://ydc-index.io/v1/contents"
@@ -16,5 +18,9 @@ class Settings(BaseSettings):
     wimbl_max_search_results: int = 6
     wimbl_max_agent_steps: int = 4
     wimbl_memory_path: str = "./data/shared_memory.jsonl"
+    wimbl_run_log_path: str = "./data/run_log.jsonl"
+    wimbl_lessons_db: str = "./data/lessons.sqlite3"
+    wimbl_lessons_per_scope: int = 40
+    wimbl_version_tag: str = "v0"
 
 settings = Settings()

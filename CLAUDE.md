@@ -52,9 +52,11 @@ Endpoint: `https://api.inference.crusoecloud.com/v1/` (OpenAI-compatible chat co
 
 | Role | Model ID (exact) |
 |---|---|
-| Trip Controller, Independent Verifier, Learning Engine | `nvidia/Nemotron-3-Super-120B-A12B` |
-| Trip children (tickets, flights, hotels, transit, price watch) | `nvidia/Nemotron-3-Nano-30B-A3B` or `nvidia/nemotron-3.5-lightning-30b-a3b`: benchmark both on one scenario, pin the winner, record why |
+| Trip Controller, Independent Verifier, Learning Engine | `nvidia/NVIDIA-Nemotron-3-Super-120B-A12B` |
+| Trip children (tickets, flights, hotels, transit, price watch) | `nvidia/Nemotron-3.5-Lightning-30B-A3B`, pinned over `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` by the bakeoff in `docs/smoke-results.md` (better quality, slower, more tokens) |
 | Optional image checks (ticket screenshots, venue maps) | `nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B`, only if time remains |
+
+These are the exact IDs from Crusoe's `/v1/models` catalog (checked 2026-10-17). The briefs spell Super and Nano without the `NVIDIA-` prefix and Lightning in lowercase; those spellings return 404 `model_not_found`.
 
 - Context on Crusoe: Super 262k (plan for 262k even though NVIDIA markets 1M), Nano 262k, Lightning 1M, Omni 262k.
 - Tool calling is **unknown** until smoke test T2 passes. Fallback: a JSON action protocol (`{"tool": ..., "args": ...}`) parsed and validated in code before execution.
@@ -63,6 +65,7 @@ Endpoint: `https://api.inference.crusoecloud.com/v1/` (OpenAI-compatible chat co
 - Reliability: retry 429/5xx with exponential backoff and jitter (1s, 2s, 4s, max 4 attempts); never retry 4xx auth/validation errors; cap parallel child calls with a semaphore (start at 4); per-call timeouts count against the run's tool-call budget.
 - Run record on every model call: `run_id, agent_role, model_id_requested, model_id_returned, version_tag, prompt_version, input_tokens, output_tokens, latency_ms, cost_estimate_usd, tool_calls, status, error, timestamp`.
 - Smoke tests T1 (chat), T2 (tool calling), T3 (structured output), T4 (5 parallel child calls) run against Super and the chosen child model before building on them.
+- Results (`scripts/smoke_crusoe.py` → `docs/smoke-results.md`): native tool calling and `response_format` work on all three models. Super is rate-limited on this account (429 `max_requests_limit`), so keep Super calls few and sequential.
 
 ## 4. Hackathon problem statements → WIMBL
 
