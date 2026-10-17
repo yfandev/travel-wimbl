@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alerts, ChecksList, Decisions } from "@/components/DonePanel";
 import { CandidateCard, EvidenceRow } from "@/components/Evidence";
 import { FamilyTree } from "@/components/FamilyTree";
-import { Assumption, CheckBadge, Chip, Micro, SourceLink, money } from "@/components/ui";
+import { Assumption, CheckBadge, Chip, Micro, SourceLink, formatTime, money } from "@/components/ui";
 import { discoverTrip, getAblation, getN1, getRun, getRunRecords } from "@/lib/api";
 import { parseGoal } from "@/lib/goal";
 import { MOCK_RUN } from "@/lib/mock";
@@ -22,15 +22,29 @@ const STEPS = [
   { key: "result", label: "Result", from: 14600, to: 15000, title: "A sourced result, with receipts.", caption: "Every claim links to its source. The Shared Brain and N+1 numbers are measured, with their sample sizes. Nothing is booked." },
 ] as const;
 
-type Live = { run: Run; ablation: MemoryAblation | null; n1: N1Report | null; records: RunRecord[] };
+/** `recorded` is set when the demo shows a run recorded earlier instead of one planned just now. */
+type Live = { run: Run; ablation: MemoryAblation | null; n1: N1Report | null; records: RunRecord[]; recorded: boolean };
 
-let started: Promise<Live> | null = null; // one live run per page load, even under React's dev double-effects
+let started: Promise<Live> | null = null; // one run per page load, even under React's dev double-effects
 
-async function startLive(): Promise<Live> {
-  const result = await discoverTrip(parseGoal(DEMO_GOAL).request);
-  const [run, ablation, n1, records] = await Promise.all([getRun(result.run_id), getAblation(), getN1(), getRunRecords()]);
-  if (!run) throw new Error(`Run ${result.run_id} was not recorded.`);
-  return { run, ablation, n1, records };
+async function withContext(run: Run | null, recorded: boolean): Promise<Live> {
+  if (!run) throw new Error("No recorded run is available.");
+  const [ablation, n1, records] = await Promise.all([getAblation(), getN1(), getRunRecords()]);
+  return { run, ablation, n1, records, recorded };
+}
+
+/** Plans the demo goal live. `?run=<id>` shows that recorded run instead; if live planning fails while the API is
+ *  up (no You.com key, You.com error), the newest recorded run is shown, labelled as recorded. */
+async function startLive(pinned: string | null): Promise<Live> {
+  if (pinned) return withContext(await getRun(pinned), true);
+  try {
+    const result = await discoverTrip(parseGoal(DEMO_GOAL).request);
+    return await withContext(await getRun(result.run_id), false);
+  } catch (e) {
+    if (/isn't reachable/.test((e as Error).message)) throw e;
+    console.warn("[wimbl] live planning failed; showing the newest recorded run", e);
+    return withContext(await getRun("latest"), true);
+  }
 }
 
 export default function DemoPage() {
@@ -42,7 +56,7 @@ export default function DemoPage() {
   const parsed = parseGoal(DEMO_GOAL);
 
   useEffect(() => {
-    started ??= startLive();
+    started ??= startLive(new URLSearchParams(window.location.search).get("run"));
     started.then(setLive).catch(async (e: Error) => {
       started = null;
       setError(e.message);
@@ -86,7 +100,8 @@ export default function DemoPage() {
           ))}
         </ol>
         <p className="hidden items-center gap-3 text-sm text-muted sm:flex">
-          {live && <Chip tone="pitch">Live · You.com · {((live.run.elapsed_ms ?? 0) / 1000).toFixed(1)} s</Chip>}
+          {live && !live.recorded && <Chip tone="pitch">Live · You.com · {((live.run.elapsed_ms ?? 0) / 1000).toFixed(1)} s</Chip>}
+          {live?.recorded && <Chip tone="rust">Recorded run{live.run.started_at && <> · {formatTime(live.run.started_at)}</>}</Chip>}
           {sample && <Chip tone="rust">Sample run</Chip>}
           <span><kbd className="rounded border border-line px-1.5 py-0.5 font-mono text-xs">←</kbd>{" "}<kbd className="rounded border border-line px-1.5 py-0.5 font-mono text-xs">→</kbd> to move</span>
         </p>
