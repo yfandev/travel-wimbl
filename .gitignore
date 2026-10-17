@@ -9,3 +9,6 @@ data/*.jsonl
 .env*.local
 patrick/
 .claude/commands/
+
+# Local state written at runtime
+data/*.sqlite3*

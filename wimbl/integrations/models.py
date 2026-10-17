@@ -16,8 +16,8 @@ CONTEXT_TOKENS = {SUPER: 262_144, NANO: 262_144, LIGHTNING: 1_000_000, OMNI: 262
 SUPER_ROLES = ("controller", "verifier", "learning")
 CHILD_ROLES = ("tickets", "flights", "hotels", "transit", "price_watch", "coordination")
 
-# Provisional: Nano vs Lightning has not been benchmarked yet. Pin the winner here and record why.
-CHILD_MODEL = NANO
+# Pinned 2026-10-17 by the child bakeoff in docs/smoke-results.md: Lightning 23/24 checks vs Nano 21/24 (slower, more tokens).
+CHILD_MODEL = LIGHTNING
 
 ROUTES = {**{r: SUPER for r in SUPER_ROLES}, **{r: CHILD_MODEL for r in CHILD_ROLES}, "image_check": OMNI}
 

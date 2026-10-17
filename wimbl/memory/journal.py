@@ -1,3 +1,4 @@
+"""Run journal: append-only run summaries written by the controller. Lessons live in wimbl/memory/store.py."""
 import json
 from datetime import datetime, timezone
 from pathlib import Path
