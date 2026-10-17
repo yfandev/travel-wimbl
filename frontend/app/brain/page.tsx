@@ -6,6 +6,8 @@ import type { Lesson, MemoryAblation } from "@/lib/types";
 
 const EVAL_TONE = { promoted: "pitch", candidate: "pale-gold", rejected: "red" } as const;
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "—");
+const fmtMetric = (v: number, unit: string) =>
+  unit === "rate" ? v.toFixed(2) : unit === "ms" ? `${(v / 1000).toFixed(1)} s` : unit === "tokens" ? Math.round(v).toLocaleString() : `${v} ${unit}`;
 
 function WeightBar({ weight }: { weight: number }) {
   return (
@@ -84,6 +86,13 @@ export default function BrainPage() {
           <Card>
             <h2 className="font-semibold">Memory off vs on</h2>
             <p className="mt-1 text-xs text-muted">Same benchmark scenarios, measured from run logs.</p>
+            {ablation?.primary_delta != null && (
+              <div className="mt-4 rounded-lg bg-pale-gold px-4 py-3">
+                <p className="text-2xl font-semibold tabular-nums">{ablation.primary_delta >= 0 ? "+" : ""}{ablation.primary_delta.toFixed(2)}</p>
+                <p className="text-sm">held-out target-check pass rate, memory on vs off</p>
+                {ablation.primary_ci95 && <p className="mt-1 text-xs text-muted">95% CI {ablation.primary_ci95[0].toFixed(2)} to {ablation.primary_ci95[1].toFixed(2)}{ablation.n && <> · n = {ablation.n.off} off, {ablation.n.on} on</>}</p>}
+              </div>
+            )}
             {ablation && ablation.metrics.every((m) => m.memory_off == null && m.memory_on == null) ? (
               <p className="mt-4 text-sm"><NotYetRun />. The benchmark with memory off vs on hasn&rsquo;t been run, so no gain is shown.</p>
             ) : (
@@ -93,13 +102,15 @@ export default function BrainPage() {
                 {ablation?.metrics.map((m) => (
                   <tr key={m.name}>
                     <th scope="row" className="py-2 pr-2 text-left font-normal">{m.name}</th>
-                    <td className="py-2 pr-2">{m.memory_off == null ? <NotYetRun /> : `${m.memory_off} ${m.unit}`}</td>
-                    <td className="py-2">{m.memory_on == null ? <NotYetRun /> : `${m.memory_on} ${m.unit}`}</td>
+                    <td className="py-2 pr-2 tabular-nums">{m.memory_off == null ? <NotYetRun /> : fmtMetric(m.memory_off, m.unit)}</td>
+                    <td className="py-2 tabular-nums">{m.memory_on == null ? <NotYetRun /> : fmtMetric(m.memory_on, m.unit)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             )}
+            {ablation?.caveat && <p className="mt-3 text-xs text-rust">⚠ {ablation.caveat}</p>}
+            {ablation?.report && <p className="mt-1 font-mono text-xs text-muted">{ablation.report}</p>}
           </Card>
           <Card>
             <h2 className="font-semibold">Conflicts resolved</h2>

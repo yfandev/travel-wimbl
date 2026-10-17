@@ -35,13 +35,8 @@ export function parseGoal(goal: string): ParsedGoal {
     .replace(/[,.;]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || goal.trim().slice(0, 80);
   assumptions.push("1 traveler, 4 days (backend defaults)");
 
-  // WIMBL is football-only, but the backend picks the football family by keyword ("match", "football", "derby"...).
-  // A goal that names only a club or stadium would otherwise run under the generic sports family.
-  const isFootball = /\b(football|soccer|f[uú]tbol|match|derby|league|liga|uefa|fifa|bundesliga|serie a|ligue 1)\b/i.test(interest);
-  const searchInterest = isFootball ? interest : `${interest} football match`.slice(0, 80);
-
   return {
-    request: { interest: searchInterest, origin: origin ? origin[1].toUpperCase() : DEFAULT_ORIGIN, budget: budgetValue, currency: "USD", days: 4, dates: when ? when[1] : null, traveler_context: goal.slice(0, 1000) },
+    request: { interest, origin: origin ? origin[1].toUpperCase() : DEFAULT_ORIGIN, budget: budgetValue, currency: "USD", days: 4, dates: when ? when[1] : null, traveler_context: goal.slice(0, 1000) },
     stated: [`Looking for: ${interest}`, ...stated],
     assumptions,
   };

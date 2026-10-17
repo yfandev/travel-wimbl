@@ -18,7 +18,8 @@ export interface RunView {
 /** Folds the run's event timeline up to `elapsed` ms. The same fold serves live streams and replays. */
 export function foldRun(run: Run, elapsed: number): RunView {
   const view: RunView = {
-    stage: "REQUEST", agents: [], activeId: null, facts: [], alerts: [], decisions: [], packages: [],
+    stage: "REQUEST", agents: [...(run.agents ?? [])], activeId: null, facts: [...(run.facts ?? []).map((f) => ({ ...f, t: 0 }))],
+    alerts: [], decisions: [], packages: [],
     checks: run.checks.map((c) => ({ ...c })), elapsed, done: false,
   };
   for (const e of run.events) {
@@ -41,13 +42,19 @@ export function foldRun(run: Run, elapsed: number): RunView {
   return view;
 }
 
+/** Only the sample run has a scripted timeline to play. Recorded runs measure just start and completion, so they
+ *  open at their final state instead of animating invented timings. */
+export const isScripted = (run: Run | null) => run?.mode === "mock" && !run.started_at;
+
 export function useRunReplay(run: Run | null) {
   const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(true);
   const end = run?.events.at(-1)?.t ?? 0;
 
+  const scripted = isScripted(run);
+
   useEffect(() => {
-    if (!run || !playing || elapsed >= end) return;
+    if (!run || !scripted || !playing || elapsed >= end) return;
     const started = performance.now() - elapsed;
     let frame = 0;
     const tick = () => {
@@ -59,12 +66,14 @@ export function useRunReplay(run: Run | null) {
     return () => cancelAnimationFrame(frame);
     // elapsed is read once to resume from where playback paused
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [run, playing, end]);
+  }, [run, scripted, playing, end]);
 
-  const view = useMemo(() => (run ? foldRun(run, elapsed) : null), [run, elapsed]);
+  // Recorded runs are always shown at their final state.
+  const shown = scripted ? elapsed : end;
+  const view = useMemo(() => (run ? foldRun(run, shown) : null), [run, shown]);
   return {
     view,
-    playing: playing && elapsed < end,
+    playing: scripted && playing && elapsed < end,
     toggle: () => setPlaying((p) => !p),
     restart: () => { setElapsed(0); setPlaying(true); },
     skip: () => { setElapsed(end); setPlaying(false); },

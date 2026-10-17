@@ -6,7 +6,7 @@ import { resetSources, useShowingMockData } from "@/lib/dataMode";
 
 const LINKS = [
   { href: "/demo", label: "Demo", match: "/demo" },
-  { href: "/run/mock-run-0001", label: "Live run", match: "/run" },
+  { href: "/run/latest", label: "Live run", match: "/run" },
   { href: "/brain", label: "Shared Brain", match: "/brain" },
   { href: "/lab", label: "N+1 lab", match: "/lab" },
   { href: "/model", label: "Nemotron", match: "/model" },

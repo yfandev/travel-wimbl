@@ -2,8 +2,8 @@
 import type { AgentNode, TripFact } from "@/lib/types";
 import { usePrefersReducedMotion } from "@/lib/useRunReplay";
 
-const W = 880, H = 420, NODE_W = 136, NODE_H = 48;
-const CHILD_ORDER = ["tickets", "flights", "hotels", "transit", "price_watch", "coordination"];
+const W = 880, NODE_W = 136, NODE_H = 48;
+const CHILD_ORDER = ["discovery", "tickets", "flights", "hotels", "transit", "price_watch", "coordination"];
 
 /** Fixed positions: parents down the centre, controller and verifier beside them, children along the bottom. */
 function layout(agents: AgentNode[]) {
@@ -27,9 +27,14 @@ const FIXED: AgentNode[] = [
 
 export function FamilyTree({ agents, activeId, facts, elapsed }: { agents: AgentNode[]; activeId: string | null; facts: (TripFact & { t: number })[]; elapsed: number }) {
   const reduced = usePrefersReducedMotion();
-  const all = [...FIXED, ...agents];
+  // Backend runs report every agent (with `executed`); only the sample run needs the controller and verifier added.
+  const reported = agents.some((a) => a.executed !== undefined);
+  const all = reported ? agents : [...FIXED.filter((f) => !agents.some((a) => a.id === f.id)), ...agents];
+  const lineageOnly = (a: AgentNode) => a.executed === false;
   const { pos, kids } = layout(all);
   const inFlight = facts.filter((f) => elapsed - f.t < 1600);
+  // Leave room under the children for lesson chips and messages only when there are any.
+  const H = kids.some((k) => k.inherited.length) || facts.length ? 420 : 350;
 
   const edge = (from: string, to: string) => {
     const a = pos[from], b = pos[to];
@@ -53,7 +58,7 @@ export function FamilyTree({ agents, activeId, facts, elapsed }: { agents: Agent
           {pos.football_parent && <path d={edge("sports_parent", "football_parent") ?? ""} />}
           {kids.map((k) => <path key={k.id} d={edge("football_parent", k.id) ?? ""} className="rise" />)}
         </g>
-        <text x={760} y={100} textAnchor="middle" className="fill-muted text-[11px]">sees package + evidence only</text>
+        {pos.verifier && all.some((a) => a.id === "verifier") && <text x={760} y={100} textAnchor="middle" className="fill-muted text-[11px]">sees package + evidence only</text>}
 
         {inFlight.flatMap((f) => f.to_agents.map((to) => {
           const d = sibling(f.from_agent, to);
@@ -77,12 +82,19 @@ export function FamilyTree({ agents, activeId, facts, elapsed }: { agents: Agent
           const isChild = CHILD_ORDER.includes(a.role);
           return (
             <g key={a.id} className={`${isChild ? "rise" : ""} ${active ? "agent-glow" : ""}`}>
+              <title>{[a.label, lineageOnly(a) ? "lineage only, ran no code" : null, a.note].filter(Boolean).join(" · ")}</title>
               <rect x={p.x - NODE_W / 2} y={p.y - NODE_H / 2} width={NODE_W} height={NODE_H} rx="10"
                 fill={active ? "#C9A227" : a.role === "football_parent" || a.role === "sports_parent" ? "#F5F7F4" : "#FFFFFF"}
-                stroke={active ? "#C9A227" : "#0E3B2E"} strokeOpacity={active ? 1 : 0.3}
-                strokeDasharray={a.role === "verifier" ? "5 4" : undefined} strokeWidth="1.5" />
-              <text x={p.x} y={p.y + (a.version ? -2 : 5)} textAnchor="middle" className="fill-forest text-[14px] font-semibold">{a.label}</text>
-              {a.version && <text x={p.x} y={p.y + 14} textAnchor="middle" className="fill-forest/70 font-mono text-[11px]">{a.version}</text>}
+                stroke={active ? "#C9A227" : "#0E3B2E"} strokeOpacity={active ? 1 : lineageOnly(a) ? 0.45 : 0.3}
+                strokeDasharray={a.role === "verifier" || lineageOnly(a) ? "5 4" : undefined} strokeWidth="1.5" />
+              <text x={p.x} y={p.y + (a.version || lineageOnly(a) ? -2 : 5)} textAnchor="middle"
+                className={`text-[14px] font-semibold ${lineageOnly(a) ? "fill-muted" : "fill-forest"}`}>{a.label.replace(" (You.com)", "")}</text>
+              {(a.version || lineageOnly(a)) && (
+                <text x={p.x} y={p.y + 14} textAnchor="middle" className="fill-forest/70 font-mono text-[11px]">
+                  {[a.version, lineageOnly(a) ? "lineage" : null].filter(Boolean).join(" · ")}
+                </text>
+              )}
+              {a.role === "discovery" && <text x={p.x} y={p.y + NODE_H / 2 + 16} textAnchor="middle" className="fill-muted text-[11px]">{a.note ?? "You.com Search + Contents"}</text>}
               {a.inherited.slice(0, 2).map((l, i) => (
                 <g key={l.lesson_id}><title>{`${l.lesson_id}, inherited from ${l.parent_version}, influence ${l.influence.toFixed(2)}`}</title>
                   <rect x={p.x - 60} y={p.y + NODE_H / 2 + 8 + i * 22} width="120" height="18" rx="9" fill="#F6EFD6" />
@@ -101,7 +113,10 @@ export function FamilyTree({ agents, activeId, facts, elapsed }: { agents: Agent
         {all.map((a) => (
           <li key={a.id} className={`rounded-lg border px-3 py-2 ${a.id === activeId ? "border-gold bg-pale-gold" : "border-line"} ${CHILD_ORDER.includes(a.role) ? "ml-6" : ""}`}>
             <div className="flex items-center justify-between gap-2">
-              <span className="font-medium">{a.label}{a.version && <span className="ml-1.5 font-mono text-xs text-muted">{a.version}</span>}</span>
+              <span className={`font-medium ${lineageOnly(a) ? "text-muted" : ""}`}>
+                {a.label}{a.version && <span className="ml-1.5 font-mono text-xs text-muted">{a.version}</span>}
+                {lineageOnly(a) && <span className="ml-1.5 text-xs font-normal text-muted">lineage</span>}
+              </span>
               {a.id === activeId && <span className="text-micro font-medium uppercase">Working</span>}
             </div>
             {a.inherited.length > 0 && (

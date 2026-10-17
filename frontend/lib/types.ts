@@ -4,7 +4,7 @@
 export type AgentRole =
   | "sports_parent" | "football_parent"
   | "tickets" | "flights" | "hotels" | "transit" | "price_watch" | "coordination"
-  | "controller" | "verifier" | "learning";
+  | "controller" | "verifier" | "learning" | "discovery";
 
 export type CheckStatus = "pending" | "passed" | "failed";
 export type Decision = "continue" | "replan" | "stop" | "escalate";
@@ -65,10 +65,14 @@ export interface InheritedLesson { lesson_id: string; influence: number; parent_
 
 export interface AgentNode {
   id: string;
-  role: AgentRole;
+  /** Known roles plus anything new the backend adds. */
+  role: AgentRole | (string & {});
   label: string;
-  version?: string;
+  version?: string | null;
   inherited: InheritedLesson[];
+  /** false = lineage only (parents are selected for the run but run no code yet). Absent on mocks: treated as true. */
+  executed?: boolean;
+  note?: string;
 }
 
 /** A compiled, frozen acceptance check: a predicate over the package and its evidence. */
@@ -117,6 +121,7 @@ export type RunEvent =
   | { t: number; type: "decision"; decision: ControllerDecision }
   | { t: number; type: "packages"; packages: TripPackage[] };
 
+/** GET /api/runs/{id} (wimbl/api_data.py). Fields after `events` are optional because mocks don't carry them. */
 export interface Run {
   run_id: string;
   goal: string;
@@ -124,9 +129,37 @@ export interface Run {
   criteria_hash: string;
   constraints: string[];
   assumptions: string[];
-  budget: { retries: number; wall_clock_s: number; tokens: number; tool_calls: number };
+  /** null means the backend doesn't enforce that budget yet. */
+  budget: { retries: number | null; wall_clock_s: number | null; tokens: number | null; tool_calls: number | null };
   checks: AcceptanceCheck[];
   events: RunEvent[];
+  started_at?: string;
+  elapsed_ms?: number;
+  status?: TripResult["status"];
+  steps?: string[];
+  findings?: VerificationFinding[];
+  evidence_ledger?: (Evidence & { candidate: string })[];
+  model_calls?: RunRecord[];
+  timing_note?: string;
+  budget_note?: string;
+  trip_result?: TripResult;
+  /** The agents that actually ran. Absent on runs recorded before the backend reported them. */
+  agents?: AgentNode[];
+  facts?: TripFact[];
+}
+
+/** GET /api/runs, newest first. */
+export interface RunSummary {
+  run_id: string;
+  goal: string;
+  mode: Run["mode"];
+  status: TripResult["status"];
+  controller_decision: TripResult["controller_decision"];
+  started_at: string;
+  elapsed_ms: number;
+  candidates: number;
+  findings: number;
+  evidence: number;
 }
 
 /** One row of the N+1 comparison; null means "not yet run". */
@@ -140,10 +173,23 @@ export interface N1Report {
   decision: "promoted" | "rejected" | null;
   decision_reason: string | null;
   history: { version: string; at: string; note: string; status: "active" | "retired" | "rolled_back" }[];
+  evaluator?: string;
+  caveat?: string;
+  report?: string;
 }
 
+/** GET /api/memory/ablation. The extras are present only when an evaluation has been recorded. */
 export interface MemoryAblation {
   metrics: { name: string; memory_off: number | null; memory_on: number | null; unit: string }[];
+  n?: { off: number; on: number };
+  primary_checks?: string[];
+  primary_delta?: number | null;
+  primary_ci95?: [number, number] | null;
+  full_score_ci95?: [number, number] | null;
+  served_lessons?: string[];
+  child_model?: string;
+  caveat?: string;
+  report?: string;
 }
 
 // ---- Live discovery (POST /api/trips/discover), mirrors wimbl/schemas.py ----

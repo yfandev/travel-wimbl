@@ -7,9 +7,15 @@ import type { EvalScore, N1Report } from "@/lib/types";
 const fmt = (s: EvalScore | null) => (s == null ? <NotYetRun /> : <span className="tabular-nums">{s.mean.toFixed(2)} <span className="text-muted">± {s.spread.toFixed(2)} · n={s.runs}</span></span>);
 
 export default function LabPage() {
-  const [r, setR] = useState<N1Report | null>(null);
+  const [r, setR] = useState<N1Report | null | undefined>(undefined);
   useEffect(() => { getN1().then(setR); }, []);
-  if (!r) return <p className="text-muted">Loading…</p>;
+  if (r === undefined) return <p className="text-muted">Loading…</p>;
+  if (r === null) return (
+    <div className="max-w-xl">
+      <h1 className="text-h1 font-semibold">Version N+1 lab</h1>
+      <p className="mt-3"><NotYetRun />. No gate decision has been recorded.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-8">
@@ -64,6 +70,8 @@ export default function LabPage() {
               {r.decision_reason && <span> · {r.decision_reason}</span>}
             </p>
           )}
+          {r.caveat && <p className="mt-2 text-xs text-rust">⚠ {r.caveat}</p>}
+          {r.evaluator && <p className="mt-1 text-xs text-muted">Evaluator: {r.evaluator}{r.report && <> · <span className="font-mono">{r.report}</span></>}</p>}
         </div>
       </Card>
 
@@ -74,7 +82,7 @@ export default function LabPage() {
             <li key={h.version} className={`flex-1 rounded-lg border p-3 ${h.status === "active" ? "border-gold bg-pale-gold" : "border-line"}`}>
               <p className="text-sm font-semibold">{h.version}</p>
               <p className="mt-1 text-sm">{h.note}</p>
-              <p className="mt-1 text-xs text-muted">{h.at} · {h.status.replace("_", " ")}</p>
+              <p className="mt-1 text-xs text-muted">{h.at.slice(0, 10)} · {h.status.replace("_", " ")}</p>
             </li>
           ))}
         </ol>
