@@ -5,7 +5,7 @@ Next.js (App Router) + Tailwind v4. Screens: home, live run (family tree, defini
 ```bash
 cd frontend && npm install
 npm run dev                                   # mock data, labelled "Mock" on every screen
-NEXT_PUBLIC_WIMBL_DATA=live NEXT_PUBLIC_WIMBL_API=http://localhost:8000 npm run dev   # FastAPI backend
+NEXT_PUBLIC_WIMBL_DATA=live npm run dev   # read the backend at NEXT_PUBLIC_API_URL (frontend/.env.local)
 npm run lint                                  # contrast rule (no gold text on white, no white on gold) + eslint
 ```
 

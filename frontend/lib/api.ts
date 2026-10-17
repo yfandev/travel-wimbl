@@ -5,8 +5,8 @@ import { MOCK_ABLATION, MOCK_LESSONS, MOCK_N1, MOCK_RUN, MOCK_RUN_RECORDS } from
 import type { Lesson, MemoryAblation, N1Report, Run, RunRecord, TripRequest, TripResult } from "./types";
 
 const LIVE = process.env.NEXT_PUBLIC_WIMBL_DATA === "live";
-// Same-origin by default: next.config.ts forwards /api/* to FastAPI.
-const API = process.env.NEXT_PUBLIC_WIMBL_API ?? "";
+// Always same-origin: next.config.ts forwards /api/* to NEXT_PUBLIC_API_URL.
+const API = "";
 
 async function load<T>(key: string, path: string, mock: () => T): Promise<T> {
   await Promise.resolve(); // report after the Nav's per-page reset, never before it
