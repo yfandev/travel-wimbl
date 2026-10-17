@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* WIMBL brand tokens. Never pair gold text with white, or white text with gold (scripts/check-contrast.mjs enforces it). */
+@theme {
+  --color-forest: #0e3b2e;
+  --color-pitch: #1b7a4a;
+  --color-gold: #c9a227;
+  --color-pale-gold: #f6efd6;
+  --color-mist: #f5f7f4;
+  --color-rust: #9a3412;
+  --color-red: #b42318;
+  --color-line: #e6eae5;
+  --color-muted: #4f625a;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --text-display: 4rem;
+  --text-display--line-height: 4.25rem;
+  --text-display--letter-spacing: -0.035em;
+  --text-h1: 2.5rem;
+  --text-h1--line-height: 3rem;
+  --text-h1--letter-spacing: -0.025em;
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 2rem;
+  --text-h2--letter-spacing: -0.015em;
+  --text-micro: 0.75rem;
+  --text-micro--line-height: 1rem;
+  --text-micro--letter-spacing: 0.04em;
+}
+
+html {
+  background: #ffffff;
+  color: var(--color-forest);
+}
+
+body {
+  background: #ffffff;
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 0 rgb(201 162 39 / 0)); }
+  50% { filter: drop-shadow(0 0 10px rgb(201 162 39 / 0.85)); }
+}
+.agent-glow { animation: glow 1.6s ease-in-out infinite; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 220ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-glow, .rise { animation: none; }
+  *, *::before, *::after { transition-duration: 0ms !important; }
+}
