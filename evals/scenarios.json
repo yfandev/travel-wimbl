@@ -1,0 +1,7 @@
+[
+ {"name":"complete_trip","official_source":true,"price":true,"dates":true,"within_budget":true},
+ {"name":"missing_price","official_source":true,"price":false,"dates":true,"within_budget":true},
+ {"name":"no_official_source","official_source":false,"price":true,"dates":true,"within_budget":true},
+ {"name":"over_budget","official_source":true,"price":true,"dates":true,"within_budget":false},
+ {"name":"missing_dates","official_source":true,"price":true,"dates":false,"within_budget":true}
+]

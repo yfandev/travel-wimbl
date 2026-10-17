@@ -1,0 +1,22 @@
+# DESIGN SKETCH ONLY — translate to the exact OpenShell policy schema of your installed version.
+network:
+  default: deny
+  allow:
+    - host: api.you.com
+      ports: [443]
+      purpose: web-search
+    - host: api.inference.crusoecloud.com
+      ports: [443]
+      purpose: model-inference
+filesystem:
+  app_code: read-only
+  writable_paths: [/workspace/data]
+  deny_sensitive_host_paths: true
+process:
+  restrict_privilege_escalation: true
+  allow_shell: false
+secrets:
+  provider_keys_in_sandbox: false
+  inject_via_host_gateway: true
+human_approval:
+  required_for: [booking, payment, account_login]
