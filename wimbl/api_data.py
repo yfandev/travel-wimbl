@@ -80,6 +80,25 @@ def _run_summary(r: dict) -> dict:
             "candidates": len(res["candidates"]), "findings": len(res["findings"]),
             "evidence": sum(len(c["evidence"]) for c in res["candidates"])}
 
+PARENT_LABELS = {"sports": ("sports_parent", "Sports Parent"), "football": ("football_parent", "Football Parent")}
+
+def _agents(res: dict) -> list[dict]:
+    """Only agents the recorded run proves were involved. Parents come from the lineage step the controller recorded; they
+    hold no code path yet, so they are marked executed=False. No lessons are read on the discovery path, so every
+    `inherited` list is empty. Trip children are not listed: the controller does not run any yet."""
+    lineage = next((s.split(":", 1)[1].strip(" .").split(" → ") for s in res["steps"] if s.startswith("Selected agent family:")), [])
+    version = lambda scope: f"v{default_store().version(scope)}"
+    agents = [{"id": PARENT_LABELS[g][0], "role": PARENT_LABELS[g][0], "label": PARENT_LABELS[g][1], "version": version(g),
+               "inherited": [], "executed": False, "note": "Selected as lineage for this run; parents run no code yet."}
+              for g in lineage if g in PARENT_LABELS]
+    agents.append({"id": "controller", "role": "controller", "label": "Trip Controller", "version": None, "inherited": [], "executed": True})
+    search_failed = any(f["code"] == "SEARCH_UNAVAILABLE" for f in res["findings"])
+    agents.append({"id": "discovery", "role": "discovery", "label": "Discovery agent (You.com)", "version": None, "inherited": [],
+                   "executed": True, **({"note": "Search failed."} if search_failed else {})})
+    if res["candidates"]:
+        agents.append({"id": "verifier", "role": "verifier", "label": "Independent verifier", "version": None, "inherited": [], "executed": True})
+    return agents
+
 def _run_detail(r: dict) -> dict:
     req, res, end = r["request"], r["result"], r["elapsed_ms"]
     checks = _checks(res)
@@ -98,7 +117,7 @@ def _run_detail(r: dict) -> dict:
             "criteria_hash": hashlib.sha256(json.dumps(res["acceptance_criteria"]).encode()).hexdigest()[:16],
             "constraints": constraints, "assumptions": sorted({cv for c in res["candidates"] for cv in c["caveats"]}),
             "budget": {"retries": None, "wall_clock_s": None, "tokens": None, "tool_calls": None},
-            "checks": checks, "events": events,
+            "checks": checks, "events": events, "agents": _agents(res),
             # Beyond frontend/lib/types.ts Run:
             "started_at": r["started_at"], "elapsed_ms": end, "status": res["status"], "steps": res["steps"],
             "findings": res["findings"], "evidence_ledger": ledger, "model_calls": RunLog().read(r["run_id"]),

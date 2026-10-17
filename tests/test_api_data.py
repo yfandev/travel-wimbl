@@ -66,3 +66,19 @@ def test_eval_endpoints_report_the_recorded_memory_measurement(client):
     held = next(m for m in n1["metrics"] if m["split"] == "heldout")
     assert held["baseline"]["mean"] == 0.75 and held["candidate"]["mean"] == 1.0 and held["candidate"]["runs"] == 20
     assert n1["decision"] == "promoted" and n1["evaluator"].startswith("stand-in")
+
+def test_run_lists_only_agents_that_ran(client):
+    rid = client.post("/api/trips/discover", json=GOAL).json()["run_id"]
+    agents = {a["id"]: a for a in client.get(f"/api/runs/{rid}").json()["agents"]}
+    assert list(agents) == ["sports_parent", "football_parent", "controller", "discovery", "verifier"]
+    assert not agents["football_parent"]["executed"] and agents["football_parent"]["version"] == "v1"
+    assert agents["verifier"]["executed"] and all(a["inherited"] == [] for a in agents.values())
+    assert "facts" not in client.get(f"/api/runs/{rid}").json()  # no trip board exists, so nothing is claimed
+
+def test_verifier_is_not_listed_when_search_fails(client, monkeypatch):
+    from wimbl.integrations.youcom import YouAPIError
+    async def down(request): raise YouAPIError(402, "insufficient credits")
+    monkeypatch.setattr(api.controller.discovery, "discover", down)
+    rid = client.post("/api/trips/discover", json=GOAL).json()["run_id"]
+    ids = [a["id"] for a in client.get(f"/api/runs/{rid}").json()["agents"]]
+    assert "verifier" not in ids and "discovery" in ids
