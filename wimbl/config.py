@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     crusoe_model: str = "meta-llama/Llama-3.3-70B-Instruct"
     you_api_key: str = ""
     you_search_endpoint: str = "https://ydc-index.io/v1/search"
+    you_contents_endpoint: str = "https://ydc-index.io/v1/contents"
+    you_cache_enabled: bool = True
+    you_cache_path: str = "./data/youcom_cache.jsonl"
     wimbl_demo_mode: bool = True
     wimbl_max_search_results: int = 6
     wimbl_max_agent_steps: int = 4

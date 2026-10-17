@@ -17,6 +17,9 @@ class Evidence(BaseModel):
     source: str = "You.com"
     retrieved_at: str
     verified: bool = False
+    page_age: str | None = None
+    provider_request_id: str | None = None
+    cache_hit: bool = False
 
 class TripCandidate(BaseModel):
     title: str
