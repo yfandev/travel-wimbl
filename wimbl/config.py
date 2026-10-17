@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     wimbl_max_agent_steps: int = 4
     wimbl_memory_path: str = "./data/shared_memory.jsonl"
     wimbl_run_log_path: str = "./data/run_log.jsonl"
+    wimbl_runs_path: str = "./data/runs.jsonl"
     wimbl_lessons_db: str = "./data/lessons.sqlite3"
     wimbl_lessons_per_scope: int = 40
     wimbl_version_tag: str = "v0"

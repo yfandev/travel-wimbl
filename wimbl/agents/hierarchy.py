@@ -7,13 +7,10 @@ AGENT_FAMILY = {
     "football": {"parent": "sports", "children": ["tickets", "flights", "hotels", "transit", "price_watch", "coordination"]},
 }
 
-FOOTBALL_KEYWORDS = ("football", "soccer", "fútbol", "futbol", "champions league", "premier league", "la liga",
-                     "laliga", "bundesliga", "serie a", "ligue 1", "uefa", "fifa", "derby", "match")
-
 def family_for(interest: str) -> str:
-    value = interest.lower()
-    if any(k in value for k in FOOTBALL_KEYWORDS): return "football"
-    return "sports"
+    """WIMBL is football-only, so every goal belongs to the football family, including goals with no football keyword
+    (e.g. "see Barcelona in March")."""
+    return "football"
 
 def inheritance_chain(group: str) -> list[str]:
     chain, current = [], group
