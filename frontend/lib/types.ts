@@ -145,3 +145,55 @@ export interface N1Report {
 export interface MemoryAblation {
   metrics: { name: string; memory_off: number | null; memory_on: number | null; unit: string }[];
 }
+
+// ---- Live discovery (POST /api/trips/discover), mirrors wimbl/schemas.py ----
+
+export interface TripRequest {
+  interest: string;
+  origin: string;
+  budget: number;
+  currency: string;
+  days: number;
+  dates: string | null;
+  traveler_context: string | null;
+}
+
+/** One search result kept as evidence. source is "You.com" for live results, "demo" for backend fixtures. */
+export interface Evidence {
+  title: string;
+  url: string;
+  snippet: string;
+  source: string;
+  retrieved_at: string;
+  /** True when You.com Contents fetched the page and it names the event. */
+  verified: boolean;
+  page_age: string | null;
+  provider_request_id: string | null;
+  cache_hit: boolean;
+}
+
+export interface TripCandidate {
+  title: string;
+  destination: string;
+  event: string;
+  dates: string | null;
+  estimated_total: number | null;
+  currency: string;
+  rationale: string;
+  evidence: Evidence[];
+  caveats: string[];
+  status: "candidate" | "verified" | "needs_review" | "rejected";
+}
+
+export interface VerificationFinding { severity: "info" | "warning" | "error"; code: string; message: string }
+
+export interface TripResult {
+  run_id: string;
+  interest: string;
+  status: "verified" | "needs_review" | "no_results" | "error";
+  acceptance_criteria: string[];
+  candidates: TripCandidate[];
+  findings: VerificationFinding[];
+  controller_decision: "stop" | "replan" | "escalate";
+  steps: string[];
+}

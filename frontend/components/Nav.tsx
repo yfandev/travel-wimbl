@@ -24,7 +24,7 @@ export function Nav() {
       <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur">
         {mock && (
           <p role="status" className="bg-pale-gold px-4 py-1 text-center text-xs text-rust">
-            Mock data, not from a real run · sources point to example.org
+            Sample data, not from a live run
           </p>
         )}
         <nav aria-label="Primary" className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-6 px-4 sm:px-8">

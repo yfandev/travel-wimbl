@@ -15,8 +15,7 @@ export default function Home() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!goal.trim()) return;
-    // Until the controller API exists, every goal opens the mock run.
-    router.push(`/run/mock-run-0001?goal=${encodeURIComponent(goal.trim())}`);
+    router.push(`/trip?goal=${encodeURIComponent(goal.trim())}`);
   }
 
   return (
