@@ -2,9 +2,12 @@
 network:
   default: deny
   allow:
+    - host: ydc-index.io
+      ports: [443]
+      purpose: you.com web-search and contents
     - host: api.you.com
       ports: [443]
-      purpose: web-search
+      purpose: you.com research-api and mcp
     - host: api.inference.crusoecloud.com
       ports: [443]
       purpose: model-inference
