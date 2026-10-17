@@ -1,8 +1,14 @@
+import asyncio
 import re
+import time
 from uuid import uuid4
 from wimbl.agents.discovery import DiscoveryAgent
-from wimbl.agents.hierarchy import family_for, inheritance_chain, official_domain
+from wimbl.agents.facts import ON_PAGE, RESEARCH_SCHEMA, apply_facts, confirm_quotes, facts_from_research, research_query
+from wimbl.agents.hierarchy import family_for, inheritance_chain, official_domain, official_domains
+from wimbl.agents.tickets import advise
 from wimbl.agents.verifier import IndependentVerifier
+from wimbl.config import settings
+from wimbl.integrations.crusoe import CrusoeClient
 from wimbl.integrations.youcom import YouAPIError, YouSearch
 from wimbl.memory import SharedMemory
 from wimbl.schemas import TripCandidate, TripRequest, TripResult, VerificationFinding
@@ -18,11 +24,48 @@ def _mentions_event(text: str, event: str) -> bool:
 def _norm(url: str) -> str: return url.rstrip("/").lower()
 
 class TripController:
-    def __init__(self, discovery=None, verifier=None, memory=None, you=None):
+    def __init__(self, discovery=None, verifier=None, memory=None, you=None, llm=None):
         self.you = you or getattr(discovery, "search", None) or YouSearch()
         self.discovery = discovery or DiscoveryAgent(search=self.you)
         self.verifier = verifier or IndependentVerifier()
         self.memory = memory or SharedMemory()
+        self.llm = llm or CrusoeClient()
+
+    async def _facts(self, request: TripRequest, candidate: TripCandidate, group: str, run_id: str,
+                     steps: list[str]) -> list[VerificationFinding]:
+        """You.com Research extracts event and ticket facts, You.com Contents re-reads the cited pages so code can check each
+        quote, then the Nemotron tickets child reads the facts. Network work stays here so the verifier stays pure."""
+        if not settings.wimbl_research_facts: return []
+        started = time.monotonic()
+        try:
+            result = await self.you.research(research_query(request), RESEARCH_SCHEMA, boost_domains=official_domains(group))
+        except YouAPIError as exc:
+            steps.append(f"You.com Research failed (HTTP {exc.status_code or 'n/a'}); no event or ticket facts this run.")
+            return [VerificationFinding(severity="warning", code="FACTS_UNAVAILABLE", message=str(exc)[:300])]
+        if result is None:
+            steps.append("Demo mode: no You.com Research call, so no event or ticket facts.")
+            return []
+        seconds = time.monotonic() - started
+        facts = facts_from_research(result, group)
+        cited = list(dict.fromkeys([f.url for f in facts if f.official] + [f.url for f in facts]))[:10]
+        try: pages = await self.you.contents(cited) if cited else []
+        except YouAPIError: pages = []
+        verified = confirm_quotes(facts, pages, result["sources"])
+        on_page = sum(f.check == ON_PAGE for f in facts)
+        apply_facts(candidate, facts, result["content"])
+        steps.append(f"You.com Research returned {len(facts)} fact(s) from {len(result['sources'])} source(s) in {seconds:.1f}s"
+                     f"{' (cached)' if result['cache_hit'] else ''}; quotes confirmed for {verified}: {on_page} on the page "
+                     f"re-read with You.com Contents, {verified - on_page} in You.com's excerpt of the page.")
+        if not (facts and settings.wimbl_tickets_child): return []
+        try:
+            candidate.ticket_advice = await asyncio.wait_for(advise(self.llm, facts, request.interest, run_id),
+                                                             settings.wimbl_child_timeout_s)
+        except Exception as exc:  # the child is advice on top of the facts; its failure must not end the run
+            steps.append(f"Tickets child (Nemotron) failed: {type(exc).__name__}.")
+            return [VerificationFinding(severity="warning", code="TICKETS_CHILD_UNAVAILABLE", message=str(exc)[:300])]
+        steps.append(f"Tickets child ran on {candidate.ticket_advice.model}, served by Crusoe Managed Inference."
+                     if candidate.ticket_advice else "Tickets child skipped: CRUSOE_API_KEY is not set, so no model call was made.")
+        return []
 
     async def _confirm(self, candidates: list[TripCandidate], group: str) -> tuple[int, str | None]:
         """Fetch official evidence pages with You.com Contents; mark Evidence.verified when the page names the event.
@@ -65,7 +108,7 @@ class TripController:
         confirmed, error = await self._confirm(candidates, group)
         via = "demo pages" if all(e.source == "demo" for c in candidates for e in c.evidence) else "You.com Contents"
         steps.append(f"Contents check failed: {error}" if error else f"Confirmed {confirmed} official page(s) with {via}.")
-        findings = []
+        findings = await self._facts(request, candidates[0], group, run_id, steps)
         for candidate in candidates:
             current = self.verifier.verify(request, candidate)
             findings.extend(current)

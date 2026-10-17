@@ -87,3 +87,33 @@ def test_demo_rows_are_labelled_demo(monkeypatch):
     rows = asyncio.run(YouSearch(use_cache=False).search("football official event schedule"))
     assert rows and all(r["source"] == "demo" for r in rows)
     assert any("uefa.com" in r["url"] for r in rows)
+
+RESEARCH_PAYLOAD = {"output": {"content": {"facts": [], "unofficial_sources": [], "risks": []}, "content_type": "object",
+    "sources": [{"url": "https://www.fcbarcelona.com/en/", "title": "FC Barcelona", "snippets": ["Official site"]}, {"title": "no url"}]}}
+
+def test_research_contract_cache_and_no_retry_on_timeout(tmp_path, live):
+    calls = []
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, json=RESEARCH_PAYLOAD)
+    you = client(tmp_path, handler)
+    first = asyncio.run(you.research("q", {"type": "object"}, boost_domains=["fcbarcelona.com"]))
+    second = asyncio.run(you.research("q", {"type": "object"}, boost_domains=["fcbarcelona.com"]))
+    assert len(calls) == 1 and str(calls[0].url) == settings.you_research_endpoint
+    assert calls[0].headers["X-API-Key"] == "test-key"
+    assert json.loads(calls[0].content) == {"input": "q", "research_effort": "standard", "output_schema": {"type": "object"},
+                                            "source_control": {"boost_domains": ["fcbarcelona.com"]}}
+    assert first["content"] == RESEARCH_PAYLOAD["output"]["content"] and [s["url"] for s in first["sources"]] == ["https://www.fcbarcelona.com/en/"]
+    assert not first["cache_hit"] and second["cache_hit"] and second["retrieved_at"] == first["retrieved_at"]
+    slow_calls = []
+    def slow(request):
+        slow_calls.append(request)
+        raise httpx.ReadTimeout("slow", request=request)
+    with pytest.raises(YouAPIError):
+        asyncio.run(client(tmp_path / "slow", slow).research("q", {"type": "object"}))
+    assert len(slow_calls) == 1  # a billed 10-50 s call is never retried after a timeout
+
+def test_research_returns_none_in_demo_mode(monkeypatch):
+    monkeypatch.setattr(settings, "you_api_key", "")
+    monkeypatch.setattr(settings, "wimbl_demo_mode", True)
+    assert asyncio.run(YouSearch(use_cache=False).research("q", {"type": "object"})) is None

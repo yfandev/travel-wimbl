@@ -20,6 +20,19 @@ class IndependentVerifier:
             findings.append(VerificationFinding(severity="warning", code="DATES_UNSET", message="Dates are missing; availability and feasibility cannot be verified."))
         if not candidate.destination or "to confirm" in candidate.destination.lower():
             findings.append(VerificationFinding(severity="warning", code="DESTINATION_UNCONFIRMED", message="Destination has not been established from authoritative evidence."))
+        if candidate.facts:  # checks on extracted facts run only when a fact step ran, so demo runs are unchanged
+            unconfirmed = [f for f in candidate.facts if not f.verified]
+            if unconfirmed:
+                findings.append(VerificationFinding(severity="warning", code="FACTS_UNCONFIRMED", message=f"{len(unconfirmed)} of {len(candidate.facts)} extracted fact(s) could not be confirmed on the cited page; treat them as leads."))
+            if not any(f.verified and f.official and f.kind == "kickoff_time" for f in candidate.facts):
+                findings.append(VerificationFinding(severity="warning", code="KICKOFF_UNCONFIRMED", message="No kickoff time is confirmed on an official page; kickoff times can move for broadcast."))
+            if not any(f.verified and f.official and f.kind == "ticket_channel" for f in candidate.facts):
+                findings.append(VerificationFinding(severity="warning", code="TICKET_CHANNEL_UNCONFIRMED", message="No official ticket channel is confirmed on an official page."))
+            prices = [f for f in candidate.facts if f.kind == "ticket_price"]
+            if prices:
+                findings.append(VerificationFinding(severity="info", code="TICKET_PRICES_NOT_LIVE", message=f"Ticket prices are published prices seen at {prices[0].observed_at[:16].replace('T', ' ')} UTC, not live availability."))
+        if candidate.ticket_advice and candidate.ticket_advice.price_is_live:
+            findings.append(VerificationFinding(severity="warning", code="LIVE_PRICE_CLAIM", message="The tickets child claimed a live price; search results do not prove live availability."))
         return findings
 
     @staticmethod

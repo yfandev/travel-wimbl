@@ -7,6 +7,7 @@ from wimbl.integrations.cache import ResponseCache
 
 SEARCH_TTL = 6 * 3600
 CONTENTS_TTL = 24 * 3600
+RESEARCH_TTL = 24 * 3600
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 def _now() -> str: return datetime.now(timezone.utc).isoformat()
@@ -32,7 +33,8 @@ DEMO_PAGES = {
 }
 
 class YouSearch:
-    """You.com Web Search (POST /v1/search) and Contents (POST /v1/contents) adapter with retries and a TTL cache."""
+    """You.com Web Search (POST /v1/search), Contents (POST /v1/contents) and Research (POST /v1/research) adapter with
+    retries and a TTL cache."""
     def __init__(self, transport: httpx.AsyncBaseTransport | None = None, cache: ResponseCache | None = None,
                  use_cache: bool = True, max_attempts: int = 3, sleep=asyncio.sleep):
         self.transport = transport
@@ -46,15 +48,17 @@ class YouSearch:
         if settings.wimbl_demo_mode: return False
         raise YouAPIError(None, "YOU_API_KEY is missing and demo mode is disabled.", retryable=False)
 
-    async def _post(self, endpoint: str, body: dict, ttl: int, cacheable=lambda payload: True) -> tuple[object, str, bool]:
+    async def _post(self, endpoint: str, body: dict, ttl: int, cacheable=lambda payload: True, *,
+                    timeout: float = 25, attempts: int | None = None) -> tuple[object, str, bool]:
         """POST with retries. Only responses that pass `cacheable` are stored, so a transient miss is not pinned for the TTL."""
         key = ResponseCache.key(endpoint, body)
         if self.cache and (hit := self.cache.get(key, ttl)):
             return hit["payload"], hit["retrieved_at"], True
         headers = {"X-API-Key": settings.you_api_key, "Content-Type": "application/json", "Accept": "application/json"}
         error = YouAPIError(None, "You.com request was not attempted.")
-        async with httpx.AsyncClient(timeout=25, transport=self.transport) as client:
-            for attempt in range(self.max_attempts):
+        attempts = attempts or self.max_attempts
+        async with httpx.AsyncClient(timeout=timeout, transport=self.transport) as client:
+            for attempt in range(attempts):
                 try:
                     response = await client.post(endpoint, headers=headers, json=body)
                 except httpx.TimeoutException:
@@ -68,7 +72,7 @@ class YouSearch:
                         return payload, retrieved_at, False
                     error = YouAPIError(response.status_code, f"You.com returned HTTP {response.status_code}: {response.text[:300]}")
                     if not error.retryable: raise error
-                if attempt + 1 < self.max_attempts: await self._sleep(0.5 * 2 ** attempt)
+                if attempt + 1 < attempts: await self._sleep(0.5 * 2 ** attempt)
         raise error
 
     async def search(self, query: str, count: int | None = None, *, boost_domains: list[str] | None = None,
@@ -113,6 +117,24 @@ class YouSearch:
             cacheable=lambda p: bool(_content_rows(p)) and all(r.get("markdown") for r in _content_rows(p)))
         return [{"url": str(r.get("url") or ""), "title": r.get("title"), "markdown": r.get("markdown"),
                  "retrieved_at": retrieved_at, "cache_hit": cache_hit, "source": "You.com"} for r in _content_rows(payload)]
+
+    async def research(self, query: str, schema: dict, *, boost_domains: list[str] | None = None) -> dict | None:
+        """Research API (POST /v1/research) with a JSON output schema. Returns None in demo mode: there is no research fixture.
+        One attempt only: a standard call takes 10-50 s and is billed per call, so a timeout is not retried."""
+        if not self._require_key(): return None
+        body = {"input": query, "research_effort": settings.you_research_effort, "output_schema": schema}
+        if boost_domains: body["source_control"] = {"boost_domains": boost_domains}
+        payload, retrieved_at, cache_hit = await self._post(settings.you_research_endpoint, body, RESEARCH_TTL,
+            cacheable=lambda p: isinstance(_research_output(p).get("content"), dict), timeout=settings.you_research_timeout_s, attempts=1)
+        output = _research_output(payload)
+        content = output.get("content")
+        return {"content": content if isinstance(content, dict) else {},
+                "sources": [s for s in output.get("sources") or [] if isinstance(s, dict) and s.get("url")],
+                "warnings": (payload.get("warnings") if isinstance(payload, dict) else None) or [],
+                "retrieved_at": retrieved_at, "cache_hit": cache_hit}
+
+def _research_output(payload) -> dict:
+    return ((payload.get("output") if isinstance(payload, dict) else None) or {})
 
 def _search_items(payload) -> list:
     """Official response shape: results.web[], falling back to results.news[]."""
