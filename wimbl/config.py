@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=(".env", ".env.local"), extra="ignore")
     crusoe_api_key: str = ""
     crusoe_base_url: str = "https://api.inference.crusoecloud.com/v1"
-    crusoe_model: str = "nvidia/Nemotron-3-Super-120B-A12B"
+    crusoe_model: str = SUPER  # Super-tier roles only; child routing lives in integrations/models.py
     you_api_key: str = ""
     you_search_endpoint: str = "https://ydc-index.io/v1/search"
     you_contents_endpoint: str = "https://ydc-index.io/v1/contents"

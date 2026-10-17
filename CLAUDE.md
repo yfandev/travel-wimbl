@@ -52,9 +52,11 @@ Endpoint: `https://api.inference.crusoecloud.com/v1/` (OpenAI-compatible chat co
 
 | Role | Model ID (exact) |
 |---|---|
-| Trip Controller, Independent Verifier, Learning Engine | `nvidia/Nemotron-3-Super-120B-A12B` |
-| Trip children (tickets, flights, hotels, transit, price watch) | `nvidia/Nemotron-3-Nano-30B-A3B` or `nvidia/nemotron-3.5-lightning-30b-a3b`: benchmark both on one scenario, pin the winner, record why |
+| Trip Controller, Independent Verifier, Learning Engine | `nvidia/NVIDIA-Nemotron-3-Super-120B-A12B` |
+| Trip children (tickets, flights, hotels, transit, price watch) | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` or `nvidia/Nemotron-3.5-Lightning-30B-A3B`: benchmark both on one scenario, pin the winner, record why |
 | Optional image checks (ticket screenshots, venue maps) | `nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B`, only if time remains |
+
+These are the exact IDs from Crusoe's `/v1/models` catalog (checked 2026-10-17). The briefs spell Super and Nano without the `NVIDIA-` prefix and Lightning in lowercase; those spellings return 404 `model_not_found`.
 
 - Context on Crusoe: Super 262k (plan for 262k even though NVIDIA markets 1M), Nano 262k, Lightning 1M, Omni 262k.
 - Tool calling is **unknown** until smoke test T2 passes. Fallback: a JSON action protocol (`{"tool": ..., "args": ...}`) parsed and validated in code before execution.

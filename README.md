@@ -60,7 +60,7 @@ Set values in `.env.local` (gitignored; real keys live only there):
 
 - `CRUSOE_API_KEY` — Crusoe inference key.
 - `CRUSOE_BASE_URL` — defaults to `https://api.inference.crusoecloud.com/v1`.
-- `CRUSOE_MODEL` — defaults to `nvidia/Nemotron-3-Super-120B-A12B`.
+- `CRUSOE_MODEL` — defaults to `nvidia/NVIDIA-Nemotron-3-Super-120B-A12B`.
 - `YOU_API_KEY` — You.com key.
 - `YOU_SEARCH_ENDPOINT` — confirm endpoint and response schema against the API plan/docs for your account.
 

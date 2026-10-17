@@ -4,9 +4,10 @@ WIMBL runs NVIDIA Nemotron models served by Crusoe Managed Inference (serverless
 This module has no imports from wimbl so config.py can take its defaults from it.
 """
 
-SUPER = "nvidia/Nemotron-3-Super-120B-A12B"
-NANO = "nvidia/Nemotron-3-Nano-30B-A3B"
-LIGHTNING = "nvidia/nemotron-3.5-lightning-30b-a3b"
+# Exact IDs from the Crusoe /v1/models catalog (checked 2026-10-17); the briefs' spellings return 404 model_not_found.
+SUPER = "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B"
+NANO = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+LIGHTNING = "nvidia/Nemotron-3.5-Lightning-30B-A3B"
 OMNI = "nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B"
 
 # Context windows as served on Crusoe (plan for 262k on Super even though NVIDIA markets 1M).
