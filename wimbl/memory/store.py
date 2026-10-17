@@ -231,11 +231,13 @@ class LessonStore:
             self._supersede(lo, w, why=f"conflict resolved ({decision_ref})")
 
     # --- read path -------------------------------------------------------------------------------------------
-    def inherited(self, agent_role: str, scope: str, token_budget: int, now: datetime | None = None) -> InheritedLessons:
+    def inherited(self, agent_role: str, scope: str, token_budget: int, now: datetime | None = None,
+                  include_candidates: bool = False) -> InheritedLessons:
         now = now or now_utc()
         scopes = [*registry.lineage(agent_role, scope), registry.USER_SCOPE]
         with self._lock:
-            live = [l for l in self.active(scopes) if not _expired(l, now) and l.evaluation_status != "rejected"]
+            live = [l for l in self.active(scopes) if not _expired(l, now) and l.evaluation_status != "rejected"
+                    and (include_candidates or _servable(l))]
             versions = {s: self.version(s) for s in scopes}
         # Conflict-free across scopes: per topic, a traveler preference wins, then the most specific scope.
         rank = {s: i for i, s in enumerate(scopes)}  # user is last, so it ranks most specific
@@ -256,6 +258,11 @@ class LessonStore:
                                 prompt_block=block, tokens_used=used if chosen else 0, token_budget=token_budget,
                                 omitted=len(scored) - len(chosen), generated_at=now.isoformat())
 
+def _servable(l: Lesson) -> bool:
+    """Served to trips only after passing the N+1 gate. Traveler preferences are the traveler's word, not a learned
+    claim, so they are served without one."""
+    return l.evaluation_status == "promoted" or l.source_type == "user"
+
 def _expired(l: Lesson, now: datetime) -> bool:
     return bool(l.expires_at) and datetime.fromisoformat(l.expires_at) <= now
 
@@ -272,14 +279,16 @@ def default_store() -> LessonStore:
     if _default is None: _default = LessonStore()
     return _default
 
-def get_inherited_lessons(agent_role: str, scope: str, token_budget: int, *, store: LessonStore | None = None,
-                          now: datetime | None = None) -> InheritedLessons:
+def get_inherited_lessons(agent_role: str, scope: str, token_budget: int, *, include_candidates: bool = False,
+                          store: LessonStore | None = None, now: datetime | None = None) -> InheritedLessons:
     """Lessons an agent should read before working, ranked by influence and packed into token_budget.
 
     agent_role: a registry role (e.g. "tickets", "verifier"). scope: the trip's family scope (e.g. "football").
+    Only promoted lessons (passed the N+1 gate) and traveler preferences are served. include_candidates=True is for the
+    gate's own candidate runs, never for real trips.
     Put `prompt_block` in the agent's prompt; ask the agent to cite lesson IDs; pass cited IDs to record_outcome().
     """
-    return (store or default_store()).inherited(agent_role, scope, token_budget, now)
+    return (store or default_store()).inherited(agent_role, scope, token_budget, now, include_candidates)
 
 def propose_lesson(lesson_record: dict | LessonProposal, *, store: LessonStore | None = None,
                    now: datetime | None = None) -> ProposalResult:

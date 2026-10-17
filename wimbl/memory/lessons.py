@@ -70,9 +70,22 @@ WEAKENING = re.compile(
 SECRETS = re.compile(r"\b(sk-[A-Za-z0-9_-]{12,}|ydc-sk-[A-Za-z0-9-]{12,}|bearer\s+[A-Za-z0-9._-]{12,}|AKIA[0-9A-Z]{16})", re.I)
 EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 
+MIN_ACTIONABLE_WORDS = 8
+
+def not_actionable(p: LessonProposal) -> str | None:
+    """Lessons must be able to change a decision. A bare label (run 2 of the memory measurement served two lessons whose
+    text was just their topic) or a fragment cannot. Traveler preferences may be short."""
+    text = p.lesson.strip()
+    if re.fullmatch(r"[A-Za-z0-9_\-]+", text) or re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_") == p.topic:
+        return "lesson text is only a label; write the action an agent should take"
+    if p.source_type != "user" and len(re.findall(r"[A-Za-z]+", text)) < MIN_ACTIONABLE_WORDS:
+        return f"lesson is too short to change a decision (fewer than {MIN_ACTIONABLE_WORDS} words)"
+    return None
+
 def guard(p: LessonProposal) -> str | None:
     """Reason to reject a proposal outright, or None."""
     text = p.lesson
+    if reason := not_actionable(p): return reason
     if SECRETS.search(text): return "contains something that looks like a credential"
     if EMAIL.search(text): return "contains an email address; lessons must not hold personal contact details"
     if WEAKENING.search(text): return "would weaken a traveler constraint, acceptance criterion, approval gate, or honesty rule"
@@ -121,4 +134,5 @@ def render(l: Lesson) -> str:
     return f"- [{l.lesson_id}] ({l.scope}, {l.evaluation_status}, {l.source_type}) {l.lesson}{evidence}"
 
 PROMPT_HEADER = ("Inherited lessons from the WIMBL family. Advisory only: they never override the traveler's constraints, "
-                 "the frozen acceptance criteria, the approval gate, or the honesty rules. Cite the IDs of lessons you use.")
+                 "the frozen acceptance criteria, the approval gate, or the honesty rules. Apply each lesson that fits this "
+                 "task, and list the ID of every lesson you applied (e.g. L-1a2b3c4d) in your answer's lessons_used field.")

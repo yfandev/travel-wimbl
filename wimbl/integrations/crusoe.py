@@ -82,8 +82,10 @@ class CrusoeClient:
 
     async def chat(self, role: str, messages: list[dict], *, run_id: str, prompt_version: str = "v0",
                    tools: list[dict] | None = None, response_format: dict | None = None,
-                   temperature: float = 0.2, max_tokens: int | None = None, model: str | None = None) -> LLMResult:
-        """One logged model call. `model` overrides routing only for benchmarks and smoke tests."""
+                   temperature: float = 0.2, max_tokens: int | None = None, model: str | None = None,
+                   timeout: float | None = None) -> LLMResult:
+        """One logged model call. `model` overrides routing only for benchmarks and smoke tests; `timeout` overrides the
+        per-call default for slow, rare calls (e.g. a long reasoning call on Super)."""
         model = model or model_for(role)
         record = dict(run_id=run_id, agent_role=role, model_id_requested=model, prompt_version=prompt_version)
         if not self.client:
@@ -91,7 +93,7 @@ class CrusoeClient:
                 return LLMResult(text="", model=None, demo=True, record=self.runlog.write(**record, status="demo",
                                  error="CRUSOE_API_KEY not set; no model call made."))
             raise LLMUnavailable("CRUSOE_API_KEY is missing and demo mode is disabled.")
-        kwargs = dict(model=model, messages=messages, temperature=temperature, timeout=settings.crusoe_timeout_s)
+        kwargs = dict(model=model, messages=messages, temperature=temperature, timeout=timeout or settings.crusoe_timeout_s)
         if tools: kwargs["tools"] = tools
         if response_format: kwargs["response_format"] = response_format
         if max_tokens: kwargs["max_tokens"] = max_tokens

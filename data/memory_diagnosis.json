@@ -1,0 +1,343 @@
+{
+ "run_id": "memdiag-20261017T230316Z",
+ "tripA": {
+  "checks": {
+   "official_source": true,
+   "flags_third_party": true,
+   "no_live_price_claim": true,
+   "names_official_resale": false,
+   "kickoff_risk": false
+  },
+  "finding": {
+   "official_source_url": "https://www.fcbarcelona.com/en/tickets/football",
+   "recommended_channel": "Official FC Barcelona ticketing",
+   "unofficial_sources": [
+    "footballticketnet.com (third-party marketplace; sellers set prices)"
+   ],
+   "price_is_live": false,
+   "risks": [
+    "Third-party sellers set their own prices and availability; official resale only permitted via Seient Lliure platform"
+   ],
+   "lessons_used": []
+  }
+ },
+ "proposals": [
+  {
+   "status": "created",
+   "lesson_id": "L-4dd959eb",
+   "reason": "",
+   "conflicts_with": [],
+   "archived": [],
+   "text": "Prioritize the club’s official ticketing site or app for home match purchases to ensure seat legitimacy and access to official resale channels, as third-party sources may not guarantee authenticity or fair pricing.",
+   "topic": "official_ticketing_preference"
+  },
+  {
+   "status": "created",
+   "lesson_id": "L-322821b8",
+   "reason": "",
+   "conflicts_with": [],
+   "archived": [],
+   "text": "When directing clients to third-party ticket platforms, clearly communicate that sellers set their own prices and availability can change, so travelers should verify total costs and seat locations before committing.",
+   "topic": "third_party_price_variability"
+  }
+ ],
+ "prompt_block": "Inherited lessons from the WIMBL family. Advisory only: they never override the traveler's constraints, the frozen acceptance criteria, the approval gate, or the honesty rules. Cite the IDs of lessons you use.\n- [L-4dd959eb] (football.tickets, candidate, run) Prioritize the club’s official ticketing site or app for home match purchases to ensure seat legitimacy and access to official resale channels, as third-party sources may not guarantee authenticity or fair pricing. Evidence: https://www.fcbarcelona.com/en/tickets/football\n- [L-322821b8] (football.tickets, candidate, run) When directing clients to third-party ticket platforms, clearly communicate that sellers set their own prices and availability can change, so travelers should verify total costs and seat locations before committing. Evidence: https://www.footballticketnet.com/fc-barcelona-football-tickets",
+ "served_ids": [
+  "L-4dd959eb",
+  "L-322821b8"
+ ],
+ "rows": [
+  {
+   "trip": "B_arsenal",
+   "memory": "off",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": false,
+    "kickoff_risk": false
+   },
+   "finding": {
+    "official_source_url": "https://www.arsenal.com/tickets",
+    "recommended_channel": "Official Arsenal ticketing",
+    "unofficial_sources": [
+     "https://www.livefootballtickets.com/arsenal-tickets"
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Most home matches sell out to members; non-members may face limited availability",
+     "Independent marketplace not affiliated with the club"
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 1216
+  },
+  {
+   "trip": "B_arsenal",
+   "memory": "off",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": false,
+    "kickoff_risk": false
+   },
+   "finding": {
+    "official_source_url": "https://www.arsenal.com/tickets",
+    "recommended_channel": "Official Arsenal ticketing",
+    "unofficial_sources": [
+     "https://www.livefootballtickets.com/arsenal-tickets"
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Most home matches sell out to members; non-members may have limited access"
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 1753
+  },
+  {
+   "trip": "B_arsenal",
+   "memory": "off",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": true,
+    "kickoff_risk": true
+   },
+   "finding": {
+    "official_source_url": "https://www.arsenal.com/tickets",
+    "recommended_channel": "Official Arsenal ticketing. Most home matches sell out to members first. If you're a member, you can purchase returned seats through the official Ticket Exchange. Non-members may find limited direct availability, but this remains the primary club-endorsed route.",
+    "unofficial_sources": [
+     "https://www.livefootballtickets.com/arsenal-tickets: Independent marketplace. Tickets listed from GBP 150 with instant confirmation. Please note this is not the official club channel and prices are for reference only, not claimed to be live."
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Premier League fixtures are often moved for TV coverage, sometimes with only a few weeks' notice (per example-news.com). Always verify the match date before purchasing tickets."
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 1053
+  },
+  {
+   "trip": "B_arsenal",
+   "memory": "on",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": true,
+    "kickoff_risk": false
+   },
+   "finding": {
+    "official_source_url": "https://www.arsenal.com/tickets",
+    "recommended_channel": "Official Arsenal ticketing (members gain priority access; all home matches are first released to members. Returned seats are available via the official Ticket Exchange.)",
+    "unofficial_sources": [
+     "livefootballtickets.com/arsenal-tickets (independent marketplace; sellers set their own prices and availability, so travelers should verify total costs and seat locations before committing)"
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Most Arsenal home matches sell out to members; non-members may face limited availability.",
+     "Third-party platforms do not guarantee authenticity, fair pricing, or seat location consistency."
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 2452
+  },
+  {
+   "trip": "B_arsenal",
+   "memory": "on",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": true,
+    "kickoff_risk": false
+   },
+   "finding": {
+    "official_source_url": "https://www.arsenal.com/tickets",
+    "recommended_channel": "Official Arsenal ticketing portal (arsenal.com/tickets) is the primary and most reliable source for Arsenal home match tickets. As the evidence notes, most home matches sell out to members, and the official Ticket Exchange offers returned seats, ensuring seat legitimacy and access to official resale channels.",
+    "unofficial_sources": [
+     "The evidence also lists an independent marketplace (livefootballtickets.com) with prices starting from GBP 150 and instant confirmation. However, per WIMBL family guidance, when directing clients to third-party platforms, sellers set their own prices and availability can change, so travelers should verify total costs and seat locations before committing."
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Third-party sellers may not guarantee authenticity or fair pricing; seat locations and total costs can differ from advertised listings."
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 2139
+  },
+  {
+   "trip": "B_arsenal",
+   "memory": "on",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": true,
+    "kickoff_risk": false
+   },
+   "finding": {
+    "official_source_url": "https://www.arsenal.com/tickets",
+    "recommended_channel": "Official Arsenal ticketing (members can access the Ticket Exchange for returned seats; most home matches sell out to members)",
+    "unofficial_sources": [
+     "https://www.livefootballtickets.com/arsenal-tickets"
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Third-party sellers set their own prices and availability can change; seat locations and total costs must be verified independently"
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 2619
+  },
+  {
+   "trip": "C_bayern",
+   "memory": "off",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": true,
+    "kickoff_risk": true
+   },
+   "finding": {
+    "official_source_url": "https://fcbayern.com/en/tickets",
+    "recommended_channel": "Official FC Bayern ticketing (members first; resale only on the official FC Bayern secondary ticket market)",
+    "unofficial_sources": [
+     "ticketcompare.com – lists tickets from as low as EUR 120, though prices are not live and may vary"
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Bundesliga kick-off dates are fixed a few weeks in advance but may still shift (per example-news.com scheduling note)"
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 986
+  },
+  {
+   "trip": "C_bayern",
+   "memory": "off",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": false,
+    "no_live_price_claim": true,
+    "names_official_resale": true,
+    "kickoff_risk": true
+   },
+   "finding": {
+    "official_source_url": "https://fcbayern.com/en/tickets",
+    "recommended_channel": "Official FC Bayern ticketing (members first; resales only allowed on the official FC Bayern secondary market)",
+    "unofficial_sources": [
+     "Ticketcompare.com – lists tickets starting from around EUR 120"
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Bundesliga dates are fixed a few weeks in advance and may still shift (per example-news.com/bundesliga-scheduling)",
+     "Third-party resale sites outside the official market may not guarantee valid entry"
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 1284
+  },
+  {
+   "trip": "C_bayern",
+   "memory": "off",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": true,
+    "kickoff_risk": true
+   },
+   "finding": {
+    "official_source_url": "https://fcbayern.com/en/tickets",
+    "recommended_channel": "Official FC Bayern ticketing platform. Tickets are first sold to club members, and resale is only permitted on the official FC Bayern secondary ticket market. This is the primary and most reliable route for securing match tickets.",
+    "unofficial_sources": [
+     "ticketcompare.com aggregates Bayern Munich ticket prices across various sellers, with the cheapest listed starting from EUR 120. Note that this pricing is not claimed as live or current."
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Bundesliga kick-off slots are fixed a few weeks in advance but may still shift, so match dates should be verified closer to kick-off."
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 1375
+  },
+  {
+   "trip": "C_bayern",
+   "memory": "on",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": false,
+    "kickoff_risk": false
+   },
+   "finding": {
+    "official_source_url": "https://fcbayern.com/en/tickets",
+    "recommended_channel": "Official FC Bayern ticketing site",
+    "unofficial_sources": [
+     "https://www.ticketcompare.com/bayern-munich"
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Tickets are sold to members first; non-members may need to join the club's membership or use the official secondary market",
+     "Third-party sellers set their own prices and availability can change without notice"
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 1849
+  },
+  {
+   "trip": "C_bayern",
+   "memory": "on",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": true,
+    "no_live_price_claim": true,
+    "names_official_resale": false,
+    "kickoff_risk": false
+   },
+   "finding": {
+    "official_source_url": "https://fcbayern.com/en/tickets",
+    "recommended_channel": "Official FC Bayern ticketing site/app",
+    "unofficial_sources": [
+     "ticketcompare.com for price comparison across sellers (note: sellers set their own prices and availability can change)"
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Tickets are sold to members first; non-members may need to access the official secondary market or wait for public release"
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 2052
+  },
+  {
+   "trip": "C_bayern",
+   "memory": "on",
+   "checks": {
+    "official_source": true,
+    "flags_third_party": false,
+    "no_live_price_claim": true,
+    "names_official_resale": true,
+    "kickoff_risk": false
+   },
+   "finding": {
+    "official_source_url": "https://fcbayern.com/en/tickets",
+    "recommended_channel": "Official FC Bayern ticketing portal (member-first release; resale only on official secondary market)",
+    "unofficial_sources": [
+     "Third-party platforms may list tickets, but sellers set their own prices and availability can change; verify total costs and seat locations before committing"
+    ],
+    "price_is_live": false,
+    "risks": [
+     "Non-official sources do not guarantee seat legitimacy or fair pricing"
+    ],
+    "lessons_used": []
+   },
+   "output_tokens": 2581
+  }
+ ]
+}
