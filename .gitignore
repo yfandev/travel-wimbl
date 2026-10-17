@@ -5,3 +5,5 @@ __pycache__/
 *.py[cod]
 data/*.jsonl
 !.gitkeep
+.vercel
+.env*.local
