@@ -20,22 +20,15 @@ class YouAPIError(RuntimeError):
 
 # Demo fixtures per agent family. Labelled "demo" so they are never credited to You.com.
 DEMO_SEARCH = {
-    "tennis": [
-        {"title": "ATP Tour tournament calendar", "url": "https://www.atptour.com/en/tournaments", "snippet": "DEMO SOURCE — confirm event dates on the official site."},
-        {"title": "Wimbledon Championships — official site", "url": "https://www.wimbledon.com/", "snippet": "DEMO SOURCE — check dates, tickets and current policies directly."},
-        {"title": "Visit London — destination guide", "url": "https://visitlondon.com/", "snippet": "DEMO SOURCE — costs and availability are not confirmed."},
-    ],
     "football": [
+        {"title": "FC Barcelona — official site", "url": "https://www.fcbarcelona.com/en/", "snippet": "DEMO SOURCE — confirm fixtures and ticket rules on the official club site."},
         {"title": "UEFA Champions League — official site", "url": "https://www.uefa.com/uefachampionsleague/", "snippet": "DEMO SOURCE — confirm fixtures and venues on the official site."},
-        {"title": "Premier League fixtures", "url": "https://www.premierleague.com/fixtures", "snippet": "DEMO SOURCE — kick-off times can change for broadcast."},
-        {"title": "Match-day travel guide", "url": "https://visitlondon.com/", "snippet": "DEMO SOURCE — costs and availability are not confirmed."},
+        {"title": "Visit Barcelona — match-day travel guide", "url": "https://www.barcelonaturisme.com/", "snippet": "DEMO SOURCE — costs and availability are not confirmed."},
     ],
 }
 DEMO_PAGES = {
-    "https://www.wimbledon.com/": "# The Championships, Wimbledon\nDEMO PAGE — confirm dates and ticket rules on the official site.",
-    "https://www.atptour.com/en/tournaments": "# ATP Tour calendar\nDEMO PAGE — tournament list.",
+    "https://www.fcbarcelona.com/en/": "# FC Barcelona\nDEMO PAGE — confirm fixtures and ticket rules on the official club site.",
     "https://www.uefa.com/uefachampionsleague/": "# UEFA Champions League\nDEMO PAGE — confirm fixtures and venues on the official site.",
-    "https://www.premierleague.com/fixtures": "# Premier League fixtures\nDEMO PAGE — fixture list.",
 }
 
 class YouSearch:
@@ -85,7 +78,7 @@ class YouSearch:
         count = max(1, min(count or settings.wimbl_max_search_results, 100))
         if not self._require_key():
             family = family_for(query)
-            rows = DEMO_SEARCH.get(family, DEMO_SEARCH["tennis"])[:count]
+            rows = DEMO_SEARCH.get(family, DEMO_SEARCH["football"])[:count]
             return [dict(r, retrieved_at=_now(), source="demo", page_age=None, provider_request_id=None, cache_hit=False) for r in rows]
         body = {"query": query, "count": count}
         if boost_domains: body["boost_domains"] = boost_domains

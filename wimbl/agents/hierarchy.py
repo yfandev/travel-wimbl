@@ -3,15 +3,16 @@ from urllib.parse import urlparse
 
 AGENT_FAMILY = {
     "global": {"parent": None, "children": ["sports"]},
-    "sports": {"parent": "global", "children": ["tennis", "football"]},
-    "tennis": {"parent": "sports", "children": ["event_discovery", "trip_planner", "verifier"]},
-    "football": {"parent": "sports", "children": ["event_discovery", "trip_planner", "verifier"]},
+    "sports": {"parent": "global", "children": ["football"]},
+    "football": {"parent": "sports", "children": ["tickets", "flights", "hotels", "transit", "price_watch", "coordination"]},
 }
+
+FOOTBALL_KEYWORDS = ("football", "soccer", "fútbol", "futbol", "champions league", "premier league", "la liga",
+                     "laliga", "bundesliga", "serie a", "ligue 1", "uefa", "fifa", "derby", "match")
 
 def family_for(interest: str) -> str:
     value = interest.lower()
-    if any(k in value for k in ("football", "soccer", "nfl")): return "football"
-    if any(k in value for k in ("tennis", "wimbledon", "atp", "wta")): return "tennis"
+    if any(k in value for k in FOOTBALL_KEYWORDS): return "football"
     return "sports"
 
 def inheritance_chain(group: str) -> list[str]:
@@ -21,15 +22,21 @@ def inheritance_chain(group: str) -> list[str]:
         current = AGENT_FAMILY.get(current, {}).get("parent")
     return list(reversed(chain))
 
+# Club sites with a fixed home stadium. League and confederation sites have no single destination.
+EVENT_VENUES = {
+    "fcbarcelona.com": "Barcelona, Spain", "realmadrid.com": "Madrid, Spain", "atleticodemadrid.com": "Madrid, Spain",
+    "arsenal.com": "London, United Kingdom", "chelseafc.com": "London, United Kingdom",
+    "tottenhamhotspur.com": "London, United Kingdom", "liverpoolfc.com": "Liverpool, United Kingdom",
+    "manutd.com": "Manchester, United Kingdom", "mancity.com": "Manchester, United Kingdom",
+    "fcbayern.com": "Munich, Germany", "bvb.de": "Dortmund, Germany", "juventus.com": "Turin, Italy",
+    "acmilan.com": "Milan, Italy", "inter.it": "Milan, Italy", "psg.fr": "Paris, France",
+}
 # One list per family: steers You.com search (boost_domains) and drives the verifier's official-source check.
 OFFICIAL_DOMAINS = {
-    "tennis": ["wimbledon.com", "atptour.com", "wtatennis.com", "usopen.org", "rolandgarros.com", "ausopen.com"],
-    "football": ["uefa.com", "fifa.com", "premierleague.com", "nfl.com"],
+    "football": ["uefa.com", "fifa.com", "premierleague.com", "laliga.com", "bundesliga.com", "legaseriea.it",
+                 "ligue1.com", *EVENT_VENUES],
 }
 OFFICIAL_DOMAINS["sports"] = sorted({d for ds in OFFICIAL_DOMAINS.values() for d in ds} | {"olympics.com"})
-# Event sites with a fixed venue city. Tour and league sites have no single destination.
-EVENT_VENUES = {"wimbledon.com": "London, United Kingdom", "rolandgarros.com": "Paris, France",
-                "usopen.org": "New York, United States", "ausopen.com": "Melbourne, Australia"}
 
 def official_domains(group: str) -> list[str]:
     return OFFICIAL_DOMAINS.get(group, OFFICIAL_DOMAINS["sports"])

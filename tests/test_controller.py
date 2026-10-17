@@ -9,10 +9,10 @@ def test_demo_run_confirms_only_the_official_event_page(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "you_api_key", "")
     monkeypatch.setattr(settings, "wimbl_demo_mode", True)
     controller = TripController(you=YouSearch(use_cache=False), memory=SharedMemory(str(tmp_path / "m.jsonl")))
-    result = asyncio.run(controller.run(TripRequest(interest="tennis")))
+    result = asyncio.run(controller.run(TripRequest(interest="football")))
     candidate = result.candidates[0]
-    assert candidate.destination == "London, United Kingdom"
-    assert [e.url for e in candidate.evidence if e.verified] == ["https://www.wimbledon.com/"]
+    assert candidate.destination == "Barcelona, Spain"
+    assert [e.url for e in candidate.evidence if e.verified] == ["https://www.fcbarcelona.com/en/"]
     assert {f.code for f in result.findings} == {"PRICE_UNCONFIRMED", "DATES_UNSET"}
     assert result.status == "needs_review" and result.controller_decision == "escalate"
     assert "Confirmed 1 official page(s) with demo pages." in result.steps
