@@ -27,7 +27,7 @@ function RunScreen() {
   if (!run || !view) return <p className="text-muted">Loading run…</p>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -81,7 +81,7 @@ function RunScreen() {
         </div>
       </div>
 
-      <section aria-labelledby="inferred" className="grid gap-6 rounded-xl bg-mist p-5 sm:grid-cols-3 sm:p-6">
+      <section aria-labelledby="inferred" className="grid gap-8 rounded-lg bg-mist p-6 sm:grid-cols-3 sm:p-8">
         <div>
           <h2 id="inferred" className="font-semibold">Hard constraints</h2>
           <ul className="mt-2 space-y-1 text-sm">{run.constraints.map((c) => <li key={c}>{c}</li>)}</ul>

@@ -9,19 +9,21 @@
   --color-mist: #f5f7f4;
   --color-rust: #9a3412;
   --color-red: #b42318;
-  --color-line: #e3e8e2;
+  --color-line: #e6eae5;
   --color-muted: #4f625a;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --text-display: 3rem;
-  --text-display--line-height: 3.25rem;
-  --text-display--letter-spacing: -0.02em;
-  --text-h1: 2rem;
-  --text-h1--line-height: 2.375rem;
-  --text-h2: 1.375rem;
-  --text-h2--line-height: 1.75rem;
+  --text-display: 4rem;
+  --text-display--line-height: 4.25rem;
+  --text-display--letter-spacing: -0.035em;
+  --text-h1: 2.5rem;
+  --text-h1--line-height: 3rem;
+  --text-h1--letter-spacing: -0.025em;
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 2rem;
+  --text-h2--letter-spacing: -0.015em;
   --text-micro: 0.75rem;
   --text-micro--line-height: 1rem;
   --text-micro--letter-spacing: 0.04em;

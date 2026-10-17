@@ -16,7 +16,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-white font-sans text-forest antialiased`}>
         <Nav />
-        <main id="main" className="mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-6">{children}</main>
+        <main id="main" className="mx-auto max-w-6xl px-4 pb-32 pt-12 sm:px-8 sm:pt-16">{children}</main>
       </body>
     </html>
   );

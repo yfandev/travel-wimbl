@@ -9,7 +9,7 @@ export function Packages({ packages, onRequestBooking }: { packages: TripPackage
   return (
     <ol className="space-y-4">
       {packages.map((p) => (
-        <li key={p.rank} className="rise rounded-xl border border-line bg-white p-5 sm:p-6">
+        <li key={p.rank} className="rise rounded-lg border border-line bg-white p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="font-mono text-xs text-muted">#{p.rank}</p>

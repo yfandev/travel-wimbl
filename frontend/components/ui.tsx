@@ -6,7 +6,7 @@ export function Micro({ children, className = "" }: { children: ReactNode; class
 }
 
 export function Card({ children, className = "", as: Tag = "section" }: { children: ReactNode; className?: string; as?: "section" | "article" | "div" }) {
-  return <Tag className={`rounded-xl border border-line bg-white p-5 sm:p-6 ${className}`}>{children}</Tag>;
+  return <Tag className={`rounded-lg border border-line bg-white p-6 sm:p-8 ${className}`}>{children}</Tag>;
 }
 
 const CHECK_STYLE: Record<CheckStatus, { icon: string; word: string; cls: string }> = {
