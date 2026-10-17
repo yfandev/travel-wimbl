@@ -24,12 +24,12 @@ def test_registry_lineage_and_scopes():
 def test_later_trip_inherits_lesson_from_earlier_trip_with_attribution(store):
     created = propose_lesson(lesson(run_id="trip-A"), store=store)
     assert created.status == "created"
-    got = get_inherited_lessons("tickets", "football", 400, store=store)
+    got = get_inherited_lessons("tickets", "football", 400, store=store, include_candidates=True)
     assert [l.lesson_id for l in got.lessons] == [created.lesson_id]
     assert created.lesson_id in got.prompt_block and "never override" in got.prompt_block
     assert got.lineage == ["global", "sports", "football", "football.tickets", "user"]
     # A sibling child does not see a lesson scoped to the tickets role.
-    assert get_inherited_lessons("hotels", "football", 400, store=store).lessons == []
+    assert get_inherited_lessons("hotels", "football", 400, store=store, include_candidates=True).lessons == []
 
 def test_near_duplicate_is_merged_not_added(store):
     first = propose_lesson(lesson(), store=store)
@@ -43,9 +43,9 @@ def test_contradiction_is_quarantined_until_resolved(store):
     b = propose_lesson(lesson("Third-party marketplaces usually have the best seats, so start the search there.",
                               evidence_urls=["https://www.footballticketnet.com/"]), store=store)
     assert b.status == "conflict" and b.conflicts_with == [a.lesson_id]
-    assert [l.lesson_id for l in get_inherited_lessons("tickets", "football", 400, store=store).lessons] == [a.lesson_id]
+    assert [l.lesson_id for l in get_inherited_lessons("tickets", "football", 400, store=store, include_candidates=True).lessons] == [a.lesson_id]
     store.resolve_conflict(b.lesson_id, a.lesson_id, decision_ref="nplus1-007")
-    assert [l.lesson_id for l in get_inherited_lessons("tickets", "football", 400, store=store).lessons] == [b.lesson_id]
+    assert [l.lesson_id for l in get_inherited_lessons("tickets", "football", 400, store=store, include_candidates=True).lessons] == [b.lesson_id]
     assert store.get(a.lesson_id).superseded_by == b.lesson_id
 
 def test_traveler_preference_beats_internet_lessons(store):
@@ -62,7 +62,7 @@ def test_more_specific_scope_wins_per_topic_at_read_time(store):
     store._db.execute("DELETE FROM lessons")
     general = propose_lesson(lesson("Compare at least three ticket sources and prefer official ones when available.", scope="sports"), store=store)
     specific = propose_lesson(lesson(), store=store)
-    got = get_inherited_lessons("tickets", "football", 400, store=store)
+    got = get_inherited_lessons("tickets", "football", 400, store=store, include_candidates=True)
     assert [l.lesson_id for l in got.lessons] == [specific.lesson_id] and general.lesson_id not in got.prompt_block
 
 @pytest.mark.parametrize("text", [
@@ -84,10 +84,10 @@ def test_token_budget_packs_highest_influence_first(store):
     strong = propose_lesson(lesson(confidence=0.9), store=store)
     propose_lesson(lesson("Arrive at the stadium ninety minutes before kickoff because security queues are long on derby days.",
                           topic="arrival_buffer", confidence=0.3), store=store)
-    tight = get_inherited_lessons("tickets", "football", 130, store=store)
+    tight = get_inherited_lessons("tickets", "football", 150, store=store, include_candidates=True)
     assert [l.lesson_id for l in tight.lessons] == [strong.lesson_id] and tight.omitted == 1
-    assert tight.tokens_used <= 130
-    assert get_inherited_lessons("tickets", "football", 10, store=store).prompt_block == ""
+    assert tight.tokens_used <= 150
+    assert get_inherited_lessons("tickets", "football", 10, store=store, include_candidates=True).prompt_block == ""
 
 def test_influence_is_smoothed_capped_and_decays(store):
     lid = propose_lesson(lesson(), store=store).lesson_id
@@ -103,13 +103,16 @@ def test_influence_is_smoothed_capped_and_decays(store):
 
 def test_expired_lessons_are_not_served(store):
     propose_lesson(lesson(), store=store)
-    assert get_inherited_lessons("tickets", "football", 400, store=store, now=now_utc() + timedelta(days=91)).lessons == []
+    assert get_inherited_lessons("tickets", "football", 400, store=store, now=now_utc() + timedelta(days=91), include_candidates=True).lessons == []
 
 def test_scope_cap_archives_weakest(store):
-    texts = ["Queue at gate seven opens early on derby days.", "Metro line three runs extra trains after evening kickoffs.",
-             "Stadium bag policy forbids backpacks larger than an A4 sheet.", "Membership presales usually start two weeks ahead.",
-             "Airport express buses stop running at midnight on weekdays.", "Fan zones near the ground fill up three hours early.",
-             "Mobile tickets need the official app installed before arrival."]
+    texts = ["Tell travelers the queue at gate seven opens early on derby days.",
+             "Plan the return on metro line three, which runs extra trains after evening kickoffs.",
+             "Warn travelers the stadium bag policy forbids backpacks larger than an A4 sheet.",
+             "Check membership presale dates because they usually start two weeks before general sale.",
+             "Avoid late airport transfers because express buses stop running at midnight on weekdays.",
+             "Advise arriving early because fan zones near the ground fill up three hours before kickoff.",
+             "Remind travelers to install the official app before arrival because mobile tickets need it."]
     for i, text in enumerate(texts):
         assert propose_lesson(lesson(text, topic=f"topic_{i}", confidence=0.1 + i / 10), store=store).status == "created"
     active = store.active(["football.tickets"])
@@ -127,5 +130,21 @@ def test_promotion_teaches_parent_and_bumps_version(store):
 def test_reject_removes_lesson_and_audit_trail_records_everything(store):
     lid = propose_lesson(lesson(), store=store).lesson_id
     store.reject(lid, decision_ref="nplus1-002")
-    assert get_inherited_lessons("tickets", "football", 400, store=store).lessons == []
+    assert get_inherited_lessons("tickets", "football", 400, store=store, include_candidates=True).lessons == []
     assert [e["kind"] for e in store.events(lid)] == ["created", "rejected"]
+
+def test_only_promoted_lessons_and_traveler_preferences_are_served_by_default(store):
+    cand = propose_lesson(lesson(), store=store).lesson_id
+    pref = propose_lesson(lesson("Traveler prefers aisle seats.", topic="seat_pref", scope="user", source_type="user", evidence_urls=[]), store=store)
+    served = get_inherited_lessons("tickets", "football", 400, store=store)
+    assert [l.lesson_id for l in served.lessons] == [pref.lesson_id]  # candidate held back until it passes the gate
+    store.promote(cand, decision_ref="gate-1")
+    assert {l.lesson_id for l in get_inherited_lessons("tickets", "football", 400, store=store).lessons} == {cand, pref.lesson_id}
+
+@pytest.mark.parametrize("text,topic", [
+    ("official_vs_resale_channels", "official_vs_resale_channels"),  # run 2 served lessons like this
+    ("Fixture announcement timing matters", "fixture_announcement_timing"),
+    ("Prefer official channels always.", "ticket_source_order")])
+def test_labels_and_fragments_are_not_actionable(store, text, topic):
+    res = propose_lesson(lesson(text, topic=topic), store=store)
+    assert res.status == "rejected" and ("label" in res.reason or "too short" in res.reason)
