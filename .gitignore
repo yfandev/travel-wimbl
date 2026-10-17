@@ -7,3 +7,5 @@ data/*.jsonl
 !.gitkeep
 .vercel
 .env*.local
+patrick/
+.claude/commands/

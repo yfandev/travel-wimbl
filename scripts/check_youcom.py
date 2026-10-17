@@ -14,7 +14,8 @@ async def main() -> int:
         return 2
     # Never print headers, settings, or exception request objects that could expose secrets.
     try:
-        results = await YouSearch().search("official tennis tournament dates", count=3)
+        # Bypass the response cache: a smoke test must reach the live API.
+        results = await YouSearch(use_cache=False).search("official tennis tournament dates", count=3)
     except httpx.HTTPStatusError as exc:
         print(f"ERROR: You.com returned HTTP {exc.response.status_code}.")
         try:

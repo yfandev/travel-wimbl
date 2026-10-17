@@ -4,7 +4,29 @@
 
 Wimbl discovers event-led trips from a traveler's interests, assembles evidence-backed candidates, verifies feasibility, and records learning candidates for scoped review.
 
+## Public demo
+
+We're preparing a one-minute walkthrough of Wimbl for the Crusoe Recursive Agents Hackathon.
+
+- **Public demo video (YouTube):** _Link coming soon._
+- **Recording / review link (Loom):** _Link coming soon._
+
+The video will walk through the agent-family concept, the current application and code, and the search-and-verification workflow. Links will be added here once the recording is published. The You.com integration and other capabilities should be understood in light of the implementation notes under [Important limits](#important-limits).
+
+## What we're building
+
+Wimbl explores a family-of-agents approach to sports-trip planning:
+
+- **Travel parent:** shared travel principles such as preferences, budget constraints, and verification standards.
+- **Sports parent:** sports-specific context and planning guidance shared with its specialist children.
+  - **Football child:** focused research for ticketing, match-day timing, football travel logistics, and source reliability.
+  - **Tennis child:** focused research for tournament schedules, ticketing, session timing, venue logistics, and reliable tennis information sources.
+- **Scoped memory and evaluation:** candidate lessons can be recorded and evaluated before any broader promotion; they are not automatically treated as facts.
+
+The intended hierarchy is **Travel → Sports → Football and Tennis**. The sports parent guides both sibling agents, while each child applies domain-specific knowledge to its own trip-planning tasks. The goal is to keep claims grounded in evidence and make it possible to evaluate whether lessons improve future plans.
+
 ## Stack
+
 - **FastAPI** backend and lightweight traveler dashboard.
 - **NVIDIA NemoClaw / OpenShell** intended runtime for always-on agents in a guarded sandbox.
 - **You.com Search API** for web discovery. Search results are evidence, not guaranteed live inventory.
@@ -14,6 +36,7 @@ Wimbl discovers event-led trips from a traveler's interests, assembles evidence-
 - **Version N+1 evaluation harness** for baseline/candidate comparisons over in-sample and held-out scenarios.
 
 ## Quick start
+
 Requires Python 3.11+.
 
 ```bash
@@ -33,7 +56,9 @@ pytest -q
 ```
 
 ## Configure integrations
+
 Set values in `.env`:
+
 - `CRUSOE_API_KEY` — Crusoe inference key.
 - `CRUSOE_BASE_URL` — defaults to `https://api.inference.crusoecloud.com/v1`.
 - `CRUSOE_MODEL` — model enabled for your account.
@@ -43,15 +68,18 @@ Set values in `.env`:
 Do not commit `.env`. Inject secrets through host/gateway secret handling; do not place raw keys in prompts, memory, logs, or sandbox files.
 
 ## NemoClaw / OpenShell
+
 Follow NVIDIA's current official [NemoClaw guide](https://www.nvidia.com/en-us/ai/nemoclaw). See `ops/nemoclaw/README.md` and `policy.example.yaml`. Policy formats and CLI commands are version-dependent; the YAML is a security design sketch, not a drop-in config. Test allowlisted egress and confirm provider keys remain host-side.
 
 ## API
+
 - `GET /api/health`
 - `POST /api/trips/discover` — JSON: `{"interest":"tennis","origin":"SFO","budget":2500,"currency":"USD","days":4}`
 - `GET /api/memory`
 - `POST /api/improvement/evaluate` — candidate policy JSON
 
 ## Important limits
+
 - The verifier does not assume search results mean availability or a booking.
 - Missing price/date data is flagged; the system does not fabricate a total.
 - Memory records have scope, source, confidence, validation status and timestamp. Child lessons are candidate knowledge, not automatically propagated as fact.
