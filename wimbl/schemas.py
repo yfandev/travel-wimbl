@@ -46,6 +46,36 @@ class TicketAdvice(BaseModel):
     risks: list[str]
     model: str | None = None
 
+class PriceLine(BaseModel):
+    """One package line item. An amount is the advertised price copied from its source with the sentence it came from;
+    it is never estimated, converted or claimed as live inventory."""
+    item: Literal["tickets", "flight", "hotel"]
+    label: str
+    status: Literal["advertised", "not_published", "not_searched"]
+    amount: float | None = None
+    currency: str | None = None
+    quantity: int = 1
+    unit: str = ""
+    subtotal: float | None = None
+    url: str | None = None
+    title: str = ""
+    quote: str = ""
+    observed_at: str | None = None
+    via: str = ""
+    official: bool = False
+    note: str = ""
+    sources_checked: list[str] = Field(default_factory=list)
+
+class PriceTotal(BaseModel):
+    """Computed sum of the priced line items in the trip currency. complete is True only when every line is priced."""
+    currency: str
+    amount: float | None
+    priced: int
+    lines: int
+    complete: bool
+    other_currencies: dict[str, float] = Field(default_factory=dict)
+    label: str = "advertised price, not live inventory"
+
 class TripCandidate(BaseModel):
     title: str
     destination: str
@@ -57,6 +87,8 @@ class TripCandidate(BaseModel):
     evidence: list[Evidence] = Field(default_factory=list)
     facts: list[Fact] = Field(default_factory=list)
     ticket_advice: TicketAdvice | None = None
+    line_items: list[PriceLine] = Field(default_factory=list)
+    price_total: PriceTotal | None = None
     caveats: list[str] = Field(default_factory=list)
     status: Literal["candidate", "verified", "needs_review", "rejected"] = "candidate"
 

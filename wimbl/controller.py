@@ -5,6 +5,7 @@ from uuid import uuid4
 from wimbl.agents.discovery import DiscoveryAgent
 from wimbl.agents.facts import ON_PAGE, RESEARCH_SCHEMA, apply_facts, confirm_quotes, facts_from_research, research_query
 from wimbl.agents.hierarchy import family_for, inheritance_chain, official_domain, official_domains
+from wimbl.agents.prices import apply_ticket_fact, price_lines, price_total, summary
 from wimbl.agents.tickets import advise
 from wimbl.agents.verifier import IndependentVerifier
 from wimbl.config import settings
@@ -67,6 +68,14 @@ class TripController:
                      if candidate.ticket_advice else "Tickets child skipped: CRUSOE_API_KEY is not set, so no model call was made.")
         return []
 
+    async def _prices(self, request: TripRequest, candidate: TripCandidate, group: str) -> str | None:
+        """Price the ticket, flight and hotel lines while the facts step runs; a confirmed official ticket price from that
+        step fills an unpriced ticket line later. Returns a step only on failure."""
+        if not settings.wimbl_price_lookup: return None
+        try: candidate.line_items = await price_lines(self.you, request, candidate, group)
+        except YouAPIError as exc: return f"Price lookup failed (HTTP {exc.status_code or 'n/a'}); no line items priced."
+        return None
+
     async def _confirm(self, candidates: list[TripCandidate], group: str) -> tuple[int, str | None]:
         """Fetch official evidence pages with You.com Contents; mark Evidence.verified when the page names the event.
         Network work stays here so the verifier remains a pure, deterministic check."""
@@ -108,8 +117,15 @@ class TripController:
         confirmed, error = await self._confirm(candidates, group)
         via = "demo pages" if all(e.source == "demo" for c in candidates for e in c.evidence) else "You.com Contents"
         steps.append(f"Contents check failed: {error}" if error else f"Confirmed {confirmed} official page(s) with {via}.")
-        findings = await self._facts(request, candidates[0], group, run_id, steps)
+        findings, price_error = await asyncio.gather(self._facts(request, candidates[0], group, run_id, steps),
+                                                     self._prices(request, candidates[0], group))
+        if price_error: steps.append(price_error)
         for candidate in candidates:
+            if candidate.line_items:
+                apply_ticket_fact(candidate.line_items, candidate.facts, group)
+                candidate.price_total = price_total(candidate.line_items, candidate.currency)
+                if candidate.price_total.complete: candidate.estimated_total = candidate.price_total.amount
+                steps.append(summary(candidate.line_items, candidate.price_total))
             current = self.verifier.verify(request, candidate)
             findings.extend(current)
             if any(f.severity == "error" for f in current): candidate.status = "rejected"

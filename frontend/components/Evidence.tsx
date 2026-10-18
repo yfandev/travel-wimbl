@@ -1,5 +1,5 @@
-import type { Evidence, Fact, TicketAdvice, TripCandidate } from "@/lib/types";
-import { Assumption, Chip, Micro, formatTime, money } from "./ui";
+import type { Evidence, Fact, PriceLine, PriceTotal, TicketAdvice, TripCandidate } from "@/lib/types";
+import { Assumption, Chip, Micro, formatTime } from "./ui";
 
 export const host = (url: string) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; } };
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : null);
@@ -69,6 +69,72 @@ export function TicketAdviceBox({ a }: { a: TicketAdvice }) {
   );
 }
 
+const ADVERTISED = "advertised price, not live inventory";
+/** Cents are kept when the source shows them, so the line items visibly add up to the sum. */
+const exact = (n: number, currency: string) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: Number.isInteger(n) ? 0 : 2 }).format(n);
+const link = "text-pitch underline decoration-pitch/30 underline-offset-2 hover:decoration-pitch";
+
+/** One line item: the advertised price with its quote, source link and observation time, or "price not published" with
+ *  the source that was checked. */
+function PriceRow({ l }: { l: PriceLine }) {
+  const priced = l.status === "advertised" && l.amount != null && l.subtotal != null && l.currency;
+  return (
+    <li className="py-4">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+        <p className="min-w-0 font-medium">{l.label}</p>
+        {priced
+          ? <p className="text-right tabular-nums">
+              {l.quantity > 1 && <span className="text-sm text-muted">{exact(l.amount!, l.currency!)} {l.unit} × {l.quantity} = </span>}
+              <span className="font-semibold">{exact(l.subtotal!, l.currency!)}</span>
+            </p>
+          : <p className="text-sm font-medium text-rust">{l.status === "not_searched" ? "not looked up" : "price not published"}</p>}
+      </div>
+      {priced && l.quote && <p className="mt-1 text-sm italic text-muted">“{l.quote}”</p>}
+      {!priced && l.note && <p className="mt-1 text-sm text-muted">{l.note}</p>}
+      <p className="mt-1 text-xs text-muted">
+        {l.url
+          ? <a href={l.url} target="_blank" rel="noopener noreferrer" className={link}>{l.title || host(l.url)}<span className="sr-only"> (opens in new tab)</span></a>
+          : "No source"}
+        {l.official && " · official"}
+        {l.observed_at && <> · seen {formatTime(l.observed_at)}</>}
+        {l.via && <> · {l.via}</>}
+        {priced && <> · <span className="font-medium text-rust">{ADVERTISED}</span></>}
+      </p>
+    </li>
+  );
+}
+
+/** Package line items and their computed sum. The total covers only the priced lines in the trip currency; other
+ *  currencies are listed, never converted. */
+export function PriceTable({ lines, total }: { lines: PriceLine[]; total: PriceTotal | null | undefined }) {
+  const sum = lines.reduce((acc, l) => (l.subtotal != null && l.currency === total?.currency ? acc + l.subtotal : acc), 0);
+  const mismatch = total?.amount != null && Math.abs(total.amount - sum) > 0.01;
+  return (
+    <section className="mt-8" aria-labelledby="prices">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h4 id="prices" className="font-semibold">Package prices</h4>
+        <Chip tone="pale-gold">Advertised prices, not live inventory</Chip>
+      </div>
+      <ul className="divide-y divide-line">{lines.map((l) => <PriceRow key={l.item} l={l} />)}</ul>
+      {total && (
+        <div className="border-t-2 border-forest pt-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="font-semibold">Sum of line items{!total.complete && " (partial)"}</p>
+            <p className="text-2xl font-semibold tabular-nums">{total.amount != null ? exact(total.amount, total.currency) : "—"}</p>
+          </div>
+          <p className="mt-1 text-sm text-muted">
+            {total.priced} of {total.lines} line items priced in {total.currency}
+            {Object.entries(total.other_currencies).map(([c, v]) => <span key={c}> · plus {exact(v, c)} not converted</span>)}
+            {!total.complete && " · unpriced lines are not counted, so this is not the trip total"}
+          </p>
+          {mismatch && <p role="alert" className="mt-1 text-sm text-red">The recorded total does not equal the sum of the line items ({exact(sum, total.currency)}).</p>}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function CandidateCard({ c }: { c: TripCandidate }) {
   const confirmed = c.evidence.filter((e) => e.verified).length;
   const facts = c.facts ?? [];
@@ -81,12 +147,20 @@ export function CandidateCard({ c }: { c: TripCandidate }) {
           <p className="mt-1 text-muted">{c.destination}{c.dates && <> · {c.dates}</>}</p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-semibold">{c.estimated_total == null ? "Not priced yet" : money(c.estimated_total, c.currency)}</p>
-          {c.estimated_total == null && <p className="text-xs text-muted">flights, hotel and tickets not yet searched</p>}
+          {c.price_total?.amount != null
+            ? <>
+                <p className="text-2xl font-semibold tabular-nums">{exact(c.price_total.amount, c.price_total.currency)}</p>
+                <p className="text-xs text-muted">sum of {c.price_total.priced} of {c.price_total.lines} line items · {ADVERTISED}</p>
+              </>
+            : <>
+                <p className="text-2xl font-semibold">{c.line_items?.length ? "Price not published" : "Not priced yet"}</p>
+                {!c.line_items?.length && <p className="text-xs text-muted">flights, hotel and tickets not yet searched</p>}
+              </>}
         </div>
       </div>
       <p className="mt-4">{c.rationale}</p>
       {c.caveats.length > 0 && <ul className="mt-4 space-y-1.5">{c.caveats.map((x) => <Assumption key={x}>{x}</Assumption>)}</ul>}
+      {c.line_items && c.line_items.length > 0 && <PriceTable lines={c.line_items} total={c.price_total} />}
       {c.ticket_advice && <TicketAdviceBox a={c.ticket_advice} />}
       {facts.length > 0 && <>
         <div className="mt-8 flex flex-wrap items-baseline justify-between gap-2">

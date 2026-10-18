@@ -246,6 +246,38 @@ export interface TicketAdvice {
   model: string | null;
 }
 
+/** One package line item (wimbl/schemas.py PriceLine). An amount is the advertised price copied from its source with its
+ *  sentence; it is never estimated, converted or live inventory. */
+export interface PriceLine {
+  item: "tickets" | "flight" | "hotel";
+  label: string;
+  status: "advertised" | "not_published" | "not_searched";
+  amount: number | null;
+  currency: string | null;
+  quantity: number;
+  unit: string;
+  subtotal: number | null;
+  url: string | null;
+  title: string;
+  quote: string;
+  observed_at: string | null;
+  via: string;
+  official: boolean;
+  note: string;
+  sources_checked: string[];
+}
+
+/** Computed sum of the priced line items in the trip currency (wimbl/schemas.py PriceTotal). */
+export interface PriceTotal {
+  currency: string;
+  amount: number | null;
+  priced: number;
+  lines: number;
+  complete: boolean;
+  other_currencies: Record<string, number>;
+  label: string;
+}
+
 export interface TripCandidate {
   title: string;
   destination: string;
@@ -258,6 +290,9 @@ export interface TripCandidate {
   /** Absent on runs recorded before fact extraction existed. */
   facts?: Fact[];
   ticket_advice?: TicketAdvice | null;
+  /** Absent on runs recorded before price lookups existed. */
+  line_items?: PriceLine[];
+  price_total?: PriceTotal | null;
   caveats: string[];
   status: "candidate" | "verified" | "needs_review" | "rejected";
 }
