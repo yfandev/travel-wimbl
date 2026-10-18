@@ -101,7 +101,7 @@ def apply_facts(candidate: TripCandidate, facts: list[Fact], content: dict) -> N
     first = {}
     for f in facts:
         if f.verified: first.setdefault(f.kind, f.value)
-    if not candidate.dates and first.get("match_date"): candidate.dates = first["match_date"]
+    if first.get("match_date"): candidate.dates = first["match_date"]  # a verified date beats the traveler's "March"
     if "to confirm" in candidate.destination.lower() and first.get("venue"): candidate.destination = first["venue"]
     resellers = [str(u)[:80] for u in content.get("unofficial_sources") or []][:8]
     if resellers: candidate.caveats.append("Third-party resellers seen (not official channels): " + ", ".join(resellers))

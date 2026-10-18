@@ -101,3 +101,11 @@ def test_tickets_agent_is_listed_in_run_order_only_when_the_run_called_it(client
     failed = record(findings=[VerificationFinding(severity="warning", code="TICKETS_CHILD_UNAVAILABLE", message="429")])
     assert failed["tickets"]["note"] == "Nemotron call failed."
     assert "tickets" not in record()
+
+def test_fact_and_ticket_findings_fail_their_criteria():
+    findings = [{"code": c, "message": c} for c in ("KICKOFF_UNCONFIRMED", "FACTS_UNCONFIRMED", "TICKET_CHANNEL_UNCONFIRMED", "LIVE_PRICE_CLAIM")]
+    result = {"acceptance_criteria": api_data.IndependentVerifier.acceptance_criteria(), "findings": findings, "candidates": [{}]}
+    status = {c["check_id"]: c["status"] for c in api_data._checks(result)}
+    assert status == {"C1": "passed", "C2": "failed", "C3": "passed", "C4": "passed", "C5": "failed", "C6": "passed"}
+    clean = {c["check_id"]: c["status"] for c in api_data._checks({**result, "findings": []})}
+    assert clean["C5"] == "passed"  # C5 is checked now, not pending

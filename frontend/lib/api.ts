@@ -45,13 +45,14 @@ export const listRuns = (): Promise<RunSummary[]> =>
   load("runs", "/api/runs", () => [{ run_id: MOCK_RUN.run_id, goal: MOCK_RUN.goal, mode: "mock", status: "verified",
     controller_decision: "stop", started_at: "", elapsed_ms: 0, candidates: 2, findings: 0, evidence: 8 } satisfies RunSummary]);
 
-/** A recorded run. "latest" resolves to the newest run, or null when none has been recorded yet. */
+/** A recorded run. "latest" resolves to the newest live run with candidates (not demo fixtures, not a failed search),
+ *  or null when none has been recorded yet. */
 export async function getRun(id: string): Promise<Run | null> {
   let runId = id;
   if (id === "latest") {
-    const runs = await listRuns();
-    if (!runs.length) return null;
-    runId = runs[0].run_id;
+    const newest = (await listRuns()).find((r) => r.mode === "live" && r.candidates > 0);
+    if (!newest) return null;
+    runId = newest.run_id;
   }
   if (runId === MOCK_RUN.run_id) { await Promise.resolve(); reportSource("run", "mock"); return { ...MOCK_RUN }; }
   const run = await load<Run>("run", `/api/runs/${encodeURIComponent(runId)}`, () => ({ ...MOCK_RUN }));

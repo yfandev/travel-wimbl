@@ -55,9 +55,11 @@ def _mode(result: dict) -> str:
     return "mock" if evidence and all(e["source"] == "demo" for e in evidence) else "live"
 
 # Verifier finding codes -> index of the acceptance criterion they fail (IndependentVerifier.acceptance_criteria order).
-FINDING_TO_CRITERION = {"NO_EVIDENCE": 0, "NO_OFFICIAL_SOURCE": 1, "OFFICIAL_SOURCE_UNCONFIRMED": 1, "DATES_UNSET": 2,
-                        "DESTINATION_UNCONFIRMED": 2, "PRICE_UNCONFIRMED": 3, "OVER_BUDGET": 3}
-UNCHECKED = {4}       # availability labelling: no verifier check yet
+FINDING_TO_CRITERION = {"NO_EVIDENCE": 0, "NO_OFFICIAL_SOURCE": 1, "OFFICIAL_SOURCE_UNCONFIRMED": 1,
+                        "KICKOFF_UNCONFIRMED": 1, "FACTS_UNCONFIRMED": 1, "DATES_UNSET": 2, "DESTINATION_UNCONFIRMED": 2,
+                        "PRICE_UNCONFIRMED": 3, "OVER_BUDGET": 3, "PRICE_WITHOUT_SOURCE": 3, "TOTAL_MISMATCH": 3,
+                        "TICKET_CHANNEL_UNCONFIRMED": 4, "LIVE_PRICE_CLAIM": 4}
+UNCHECKED: set[int] = set()  # every criterion has at least one verifier check
 ALWAYS_PASSED = {5}   # no booking or payment action exists in the system
 
 def _checks(result: dict) -> list[dict]:

@@ -35,17 +35,22 @@ async function withContext(run: Run | null, recorded: boolean): Promise<Live> {
   return { run, ablation, n1, records, recorded };
 }
 
-/** Plans the demo goal live. `?run=<id>` shows that recorded run instead; if live planning fails while the API is
- *  up (no You.com key, You.com error), the newest recorded run is shown, labelled as recorded. */
+/** Plans the demo goal live. `?run=<id>` shows that recorded run instead. If live planning fails for any reason (no
+ *  You.com key, so demo fixtures; a failed search, so no candidates; a You.com error; the proxy timing out on a slow
+ *  plan), the newest recorded live run is shown, labelled as recorded. Errors only if that also fails. */
 async function startLive(pinned: string | null): Promise<Live> {
   if (pinned) return withContext(await getRun(pinned), true);
   try {
     const result = await discoverTrip(parseGoal(DEMO_GOAL).request);
-    return await withContext(await getRun(result.run_id), false);
+    const run = await getRun(result.run_id);
+    if (!run || run.mode === "mock" || !run.trip_result?.candidates.length)
+      throw new Error(`run ${result.run_id} is ${run?.mode === "mock" ? "demo fixtures" : "without candidates"}`);
+    return await withContext(run, false);
   } catch (e) {
-    if (/isn't reachable/.test((e as Error).message)) throw e;
     console.warn("[wimbl] live planning failed; showing the newest recorded run", e);
-    return withContext(await getRun("latest"), true);
+    const recorded = await getRun("latest");
+    if (!recorded) throw e; // nothing to fall back to: the page shows the error (and the sample run if the API is down)
+    return withContext(recorded, true);
   }
 }
 

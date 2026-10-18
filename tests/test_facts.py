@@ -74,3 +74,13 @@ def test_research_schema_fits_the_output_schema_subset():
         elif isinstance(node, list):
             for value in node: walk(value)
     walk(RESEARCH_SCHEMA)
+
+def test_a_verified_match_date_overrides_the_travelers_month():
+    facts = facts_from_research(RESULT, "football")
+    confirm_quotes(facts, [PAGE], RESULT["sources"])
+    candidate = TripCandidate(title="T", destination="Barcelona, Spain", event="E", rationale="r", dates="March")
+    apply_facts(candidate, facts, RESULT["content"])
+    assert candidate.dates == "Sun 25 Oct 2026"
+    unverified = TripCandidate(title="T", destination="Barcelona, Spain", event="E", rationale="r", dates="March")
+    apply_facts(unverified, facts_from_research(RESULT, "football"), RESULT["content"])  # quotes never checked
+    assert unverified.dates == "March"

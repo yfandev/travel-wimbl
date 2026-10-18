@@ -72,7 +72,7 @@ Open **http://localhost:3000/demo**. Move between the four steps with **→** an
 - With `YOU_API_KEY` set, opening `/demo` plans the goal live through You.com. The top-right chip reads **Live · You.com** with the measured time.
 - If live planning fails, `/demo` shows the newest recorded run. The chip reads **Recorded run** with the time it ran.
 - To record the video from the same run every take, pin the packaged run:
-  http://localhost:3000/demo?run=557b1afb-8af2-4ecb-b5e0-1c79dcd10be8
+  http://localhost:3000/demo?run=57b1a44f-fdf9-4990-aac7-7919521fd32f
 - If the backend isn't running at all, the app shows sample data with a pale gold "Sample data, not from a live run" bar. Don't record in that state.
 - The Shared Brain and N+1 numbers come from a recorded evaluation (`data/memory_v2_runs.json`, n=20 runs per arm) and are shown with their sample sizes and caveat.
 

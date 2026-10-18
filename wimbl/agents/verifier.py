@@ -19,7 +19,7 @@ class IndependentVerifier:
             findings.append(VerificationFinding(severity="warning", code="PRICE_UNCONFIRMED", message=message))
         elif candidate.estimated_total > request.budget:
             findings.append(VerificationFinding(severity="error", code="OVER_BUDGET", message=f"Estimated total exceeds budget ({candidate.estimated_total:.2f} > {request.budget:.2f})."))
-        if not (candidate.dates or request.dates):
+        if not candidate.dates:
             findings.append(VerificationFinding(severity="warning", code="DATES_UNSET", message="Dates are missing; availability and feasibility cannot be verified."))
         if not candidate.destination or "to confirm" in candidate.destination.lower():
             findings.append(VerificationFinding(severity="warning", code="DESTINATION_UNCONFIRMED", message="Destination has not been established from authoritative evidence."))
