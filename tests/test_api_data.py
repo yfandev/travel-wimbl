@@ -82,3 +82,22 @@ def test_verifier_is_not_listed_when_search_fails(client, monkeypatch):
     rid = client.post("/api/trips/discover", json=GOAL).json()["run_id"]
     ids = [a["id"] for a in client.get(f"/api/runs/{rid}").json()["agents"]]
     assert "verifier" not in ids and "discovery" in ids
+
+def test_tickets_agent_is_listed_in_run_order_only_when_the_run_called_it(client):
+    from datetime import datetime, timezone
+    from wimbl.schemas import TicketAdvice, TripCandidate, TripRequest, TripResult, VerificationFinding
+    def record(advice=None, findings=()):
+        c = TripCandidate(title="T", destination="Barcelona, Spain", event="E", rationale="r", ticket_advice=advice)
+        result = TripResult(run_id=f"run-{len(findings)}-{bool(advice)}", interest="FC Barcelona", status="needs_review",
+            acceptance_criteria=[], candidates=[c], findings=list(findings), controller_decision="escalate",
+            steps=["Selected agent family: global → sports → football."])
+        api_data.runs.record(TripRequest(interest="FC Barcelona"), result, datetime.now(timezone.utc), 10)
+        return {a["id"]: a for a in client.get(f"/api/runs/{result.run_id}").json()["agents"]}
+    advice = TicketAdvice(official_source_url="https://www.fcbarcelona.com/en/tickets", recommended_channel="Official club site",
+                          unofficial_sources=[], price_is_live=False, risks=[], model="nvidia/Nemotron-3.5-Lightning-30B-A3B")
+    ran = record(advice)
+    assert list(ran) == ["sports_parent", "football_parent", "controller", "discovery", "tickets", "verifier"]
+    assert ran["tickets"]["executed"] and ran["tickets"]["note"] == "NVIDIA Nemotron · Crusoe"
+    failed = record(findings=[VerificationFinding(severity="warning", code="TICKETS_CHILD_UNAVAILABLE", message="429")])
+    assert failed["tickets"]["note"] == "Nemotron call failed."
+    assert "tickets" not in record()

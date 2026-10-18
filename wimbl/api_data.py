@@ -85,7 +85,8 @@ PARENT_LABELS = {"sports": ("sports_parent", "Sports Parent"), "football": ("foo
 def _agents(res: dict) -> list[dict]:
     """Only agents the recorded run proves were involved. Parents come from the lineage step the controller recorded; they
     hold no code path yet, so they are marked executed=False. No lessons are read on the discovery path, so every
-    `inherited` list is empty. Trip children are not listed: the controller does not run any yet."""
+    `inherited` list is empty. The tickets child is listed only when this run called it (its advice or its failure is in
+    the result); the other trip children do not run yet. The list is in the order the run used the agents."""
     lineage = next((s.split(":", 1)[1].strip(" .").split(" → ") for s in res["steps"] if s.startswith("Selected agent family:")), [])
     version = lambda scope: f"v{default_store().version(scope)}"
     agents = [{"id": PARENT_LABELS[g][0], "role": PARENT_LABELS[g][0], "label": PARENT_LABELS[g][1], "version": version(g),
@@ -95,6 +96,10 @@ def _agents(res: dict) -> list[dict]:
     search_failed = any(f["code"] == "SEARCH_UNAVAILABLE" for f in res["findings"])
     agents.append({"id": "discovery", "role": "discovery", "label": "Discovery agent (You.com)", "version": None, "inherited": [],
                    "executed": True, **({"note": "Search failed."} if search_failed else {})})
+    advised = any(c.get("ticket_advice") for c in res["candidates"])
+    if advised or any(f["code"] == "TICKETS_CHILD_UNAVAILABLE" for f in res["findings"]):
+        agents.append({"id": "tickets", "role": "tickets", "label": "Tickets agent", "version": None, "inherited": [],
+                       "executed": True, "note": "NVIDIA Nemotron · Crusoe" if advised else "Nemotron call failed."})
     if res["candidates"]:
         agents.append({"id": "verifier", "role": "verifier", "label": "Independent verifier", "version": None, "inherited": [], "executed": True})
     return agents
