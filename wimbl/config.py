@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     wimbl_max_agent_steps: int = 4
     wimbl_research_facts: bool = True  # You.com Research extracts event and ticket facts for each run
     wimbl_tickets_child: bool = True  # the Nemotron tickets child reviews those facts when CRUSOE_API_KEY is set
+    wimbl_price_lookup: bool = True  # You.com Search and Contents price the ticket, flight and hotel line items
     wimbl_child_timeout_s: float = 75  # Lightning p50 was 9-56 s in docs/memory-results.md
     wimbl_memory_path: str = "./data/shared_memory.jsonl"
     wimbl_run_log_path: str = "./data/run_log.jsonl"

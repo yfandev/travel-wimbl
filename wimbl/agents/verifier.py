@@ -12,8 +12,11 @@ class IndependentVerifier:
             findings.append(VerificationFinding(severity="warning", code="NO_OFFICIAL_SOURCE", message="No recognized official event source found; verify the event directly."))
         elif not any(e.verified for e in official):
             findings.append(VerificationFinding(severity="warning", code="OFFICIAL_SOURCE_UNCONFIRMED", message="Official source found, but its page content did not confirm the event; open it before relying on it."))
+        total = candidate.price_total
         if candidate.estimated_total is None:
-            findings.append(VerificationFinding(severity="warning", code="PRICE_UNCONFIRMED", message="Total trip price is missing; do not claim the package fits the budget."))
+            message = (f"Only {total.priced} of {total.lines} line items have an advertised price in {total.currency}; the total is partial, so do not claim the package fits the budget."
+                       if total and total.lines else "Total trip price is missing; do not claim the package fits the budget.")
+            findings.append(VerificationFinding(severity="warning", code="PRICE_UNCONFIRMED", message=message))
         elif candidate.estimated_total > request.budget:
             findings.append(VerificationFinding(severity="error", code="OVER_BUDGET", message=f"Estimated total exceeds budget ({candidate.estimated_total:.2f} > {request.budget:.2f})."))
         if not (candidate.dates or request.dates):
@@ -31,6 +34,13 @@ class IndependentVerifier:
             prices = [f for f in candidate.facts if f.kind == "ticket_price"]
             if prices:
                 findings.append(VerificationFinding(severity="info", code="TICKET_PRICES_NOT_LIVE", message=f"Ticket prices are published prices seen at {prices[0].observed_at[:16].replace('T', ' ')} UTC, not live availability."))
+        advertised = [l for l in candidate.line_items if l.status == "advertised"]
+        if advertised:
+            findings.append(VerificationFinding(severity="info", code="PRICES_ADVERTISED_NOT_LIVE", message=f"{len(advertised)} line item price(s) are advertised prices copied from their sources, not live inventory or a quote."))
+        if any(l.status == "advertised" and not (l.url and l.observed_at and l.quote) for l in candidate.line_items):
+            findings.append(VerificationFinding(severity="error", code="PRICE_WITHOUT_SOURCE", message="A line item shows a price without its source link, observation time and quote."))
+        if total and total.amount is not None and abs(total.amount - sum(l.subtotal or 0 for l in candidate.line_items if l.currency == total.currency)) > 0.01:
+            findings.append(VerificationFinding(severity="error", code="TOTAL_MISMATCH", message="The package total does not equal the sum of its line items."))
         if candidate.ticket_advice and candidate.ticket_advice.price_is_live:
             findings.append(VerificationFinding(severity="warning", code="LIVE_PRICE_CLAIM", message="The tickets child claimed a live price; search results do not prove live availability."))
         return findings
