@@ -218,6 +218,34 @@ export interface Evidence {
   cache_hit: boolean;
 }
 
+/** A match or ticket fact extracted by You.com Research (wimbl/schemas.py Fact). `verified` is set by code, never a
+ *  model: true only when the quote states the value and was found on the cited page or in You.com's excerpt of it. */
+export interface Fact {
+  kind: string;
+  value: string;
+  amount: number | null;
+  currency: string | null;
+  url: string;
+  title: string;
+  quote: string;
+  observed_at: string;
+  source: string;
+  official: boolean;
+  cache_hit: boolean;
+  verified: boolean;
+  check: string;
+}
+
+/** The Nemotron tickets child's advice from those facts (wimbl/schemas.py TicketAdvice). Advice, not verification. */
+export interface TicketAdvice {
+  official_source_url: string;
+  recommended_channel: string;
+  unofficial_sources: string[];
+  price_is_live: boolean;
+  risks: string[];
+  model: string | null;
+}
+
 export interface TripCandidate {
   title: string;
   destination: string;
@@ -227,6 +255,9 @@ export interface TripCandidate {
   currency: string;
   rationale: string;
   evidence: Evidence[];
+  /** Absent on runs recorded before fact extraction existed. */
+  facts?: Fact[];
+  ticket_advice?: TicketAdvice | null;
   caveats: string[];
   status: "candidate" | "verified" | "needs_review" | "rejected";
 }
