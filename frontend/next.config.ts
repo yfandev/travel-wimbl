@@ -5,6 +5,9 @@ import type { NextConfig } from "next";
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
 const nextConfig: NextConfig = {
+  // A live plan can take ~50 s when You.com Research is not cached; the default proxy limit hung up and the page
+  // fell back to sample data.
+  experimental: { proxyTimeout: 120_000 },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${API_URL}/api/:path*` }];
   },
