@@ -13,6 +13,8 @@ import { foldRun, isScripted, usePrefersReducedMotion } from "@/lib/useRunReplay
 import { useTimeline } from "@/lib/useTimeline";
 
 const DEMO_GOAL = "See Barcelona at the Camp Nou in March, under $2,500 from SFO";
+/** One agent per beat when step 2 replays a live run's order. A presentation pace, not a measured duration. */
+const REVEAL_MS = 700;
 
 /** Four beats. `from`/`to` are windows of the sample run's scripted timeline; a live run is shown complete at each beat. */
 const STEPS = [
@@ -83,6 +85,14 @@ export default function DemoPage() {
   }, [go]);
 
   const view = run ? foldRun(run, elapsed) : null;
+  // A live run records no per-agent timings, so step 2 reveals its agents in the order the run used them (the backend
+  // lists them in that order), and the newest one that ran code glows. No durations are invented.
+  const agentCount = view?.agents.length ?? 0;
+  const reveal = useTimeline(0, agentCount * REVEAL_MS, reduced || scripted || s.key !== "family");
+  const revealed = view && !scripted ? view.agents.slice(0, Math.min(agentCount, Math.floor(reveal / REVEAL_MS) + 1)) : view?.agents ?? [];
+  const newest = revealed.at(-1);
+  const revealActive = !scripted && reveal < agentCount * REVEAL_MS && newest && newest.executed !== false ? newest.id : null;
+  const childRan = view?.agents.some((a) => a.role === "tickets") ?? false;
   const waiting = <p role="status" className="text-muted">{error ?? "Searching You.com and checking official pages…"}</p>;
   const returnedModels = [...new Set((live?.records ?? []).filter((r) => r.status === "ok").map((r) => r.model_id_returned).filter(Boolean))] as string[];
 
@@ -147,8 +157,13 @@ export default function DemoPage() {
         {s.key === "family" && (!run || !view ? waiting : (
           <div className="grid gap-10 lg:grid-cols-[1fr_22rem]">
             <div>
-              <FamilyTree agents={view.agents} activeId={view.activeId} facts={view.facts} elapsed={view.elapsed} />
-              {!scripted && <p className="mt-3 text-xs text-muted">Dashed parents are lineage only. No trip children ran on this path yet.</p>}
+              <FamilyTree agents={scripted ? view.agents : revealed} activeId={scripted ? view.activeId : revealActive} facts={view.facts} elapsed={view.elapsed} />
+              {!scripted && (
+                <p className="mt-3 text-xs text-muted">
+                  Agents appear in the order this run used them, not to scale. Dashed parents are lineage only.
+                  {childRan ? " The tickets agent read the You.com facts on NVIDIA Nemotron, served by Crusoe." : " No trip children ran on this run."}
+                </p>
+              )}
             </div>
             <section>
               {scripted ? (

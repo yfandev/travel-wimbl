@@ -79,9 +79,8 @@ export function FamilyTree({ agents, activeId, facts, elapsed }: { agents: Agent
           const p = pos[a.id];
           if (!p) return null;
           const active = a.id === activeId;
-          const isChild = CHILD_ORDER.includes(a.role);
           return (
-            <g key={a.id} className={`${isChild ? "rise" : ""} ${active ? "agent-glow" : ""}`}>
+            <g key={a.id} className={`rise ${active ? "agent-glow" : ""}`}>
               <title>{[a.label, lineageOnly(a) ? "lineage only, ran no code" : null, a.note].filter(Boolean).join(" · ")}</title>
               <rect x={p.x - NODE_W / 2} y={p.y - NODE_H / 2} width={NODE_W} height={NODE_H} rx="10"
                 fill={active ? "#C9A227" : a.role === "football_parent" || a.role === "sports_parent" ? "#F5F7F4" : "#FFFFFF"}
@@ -94,7 +93,7 @@ export function FamilyTree({ agents, activeId, facts, elapsed }: { agents: Agent
                   {[a.version, lineageOnly(a) ? "lineage" : null].filter(Boolean).join(" · ")}
                 </text>
               )}
-              {a.role === "discovery" && <text x={p.x} y={p.y + NODE_H / 2 + 16} textAnchor="middle" className="fill-muted text-[11px]">{a.note ?? "You.com Search + Contents"}</text>}
+              {(a.role === "discovery" || a.role === "tickets") && <text x={p.x} y={p.y + NODE_H / 2 + 16} textAnchor="middle" className="fill-muted text-[11px]">{a.note ?? "You.com Search + Contents"}</text>}
               {a.inherited.slice(0, 2).map((l, i) => (
                 <g key={l.lesson_id}><title>{`${l.lesson_id}, inherited from ${l.parent_version}, influence ${l.influence.toFixed(2)}`}</title>
                   <rect x={p.x - 60} y={p.y + NODE_H / 2 + 8 + i * 22} width="120" height="18" rx="9" fill="#F6EFD6" />
